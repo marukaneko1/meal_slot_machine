@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums are not natively supported in SQLite, so we use String with validation
+
+model Dish {
+  id               String   @id @default(uuid())
+  name             String
+  slotCategory     String   // main_chicken, main_beef, side_veg, side_starch, soup, muffin
+  kosher           Boolean  @default(false)
+  kosherStyle      String   @default("unknown") // meat, dairy, pareve, unknown
+  difficulty       String   @default("unknown") // easy, medium, hard, unknown
+  mainProtein      String?  // chicken, beef, fish, tofu, none, etc.
+  cuisine          String?
+  prepTimeMinutes  Int?
+  cookTimeMinutes  Int?
+  servings         Int?
+  notes            String?
+  sourceUrl        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  ingredients  DishIngredient[]
+  tags         DishTag[]
+  allergens    DishAllergen[]
+  planItems    PlanItem[]
+
+  @@unique([name, slotCategory])
+  @@index([name])
+  @@index([slotCategory])
+  @@index([kosher])
+  @@index([kosherStyle])
+  @@index([difficulty])
+}
+
+model Ingredient {
+  id     String           @id @default(uuid())
+  name   String           @unique // stored lowercase
+  dishes DishIngredient[]
+
+  @@index([name])
+}
+
+model DishIngredient {
+  id           String     @id @default(uuid())
+  dishId       String
+  ingredientId String
+  dish         Dish       @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([dishId, ingredientId])
+}
+
+model Tag {
+  id     String    @id @default(uuid())
+  name   String    @unique // stored lowercase
+  dishes DishTag[]
+
+  @@index([name])
+}
+
+model DishTag {
+  id     String @id @default(uuid())
+  dishId String
+  tagId  String
+  dish   Dish   @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([dishId, tagId])
+}
+
+model Allergen {
+  id     String         @id @default(uuid())
+  name   String         @unique // dairy, eggs, nuts, gluten
+  dishes DishAllergen[]
+
+  @@index([name])
+}
+
+model DishAllergen {
+  id         String   @id @default(uuid())
+  dishId     String
+  allergenId String
+  dish       Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: Cascade)
+
+  @@unique([dishId, allergenId])
+}
+
+model CustomerProfile {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  rulesJson String   // JSON string describing required categories per day
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  plans     Plan[]
+}
+
+model Plan {
+  id        String           @id @default(uuid())
+  profileId String?
+  profile   CustomerProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  startDate DateTime?
+  mode      String           // daily, weekly
+  seed      String?          // for reproducible plans
+  createdAt DateTime         @default(now())
+  items     PlanItem[]
+
+  @@index([profileId])
+  @@index([createdAt])
+}
+
+model PlanItem {
+  id           String @id @default(uuid())
+  planId       String
+  plan         Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dayIndex     Int    // 0-6
+  slotCategory String
+  dishId       String
+  dish         Dish   @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+}
+
+model AdminSession {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
