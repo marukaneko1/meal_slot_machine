@@ -6,11 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Enums are not natively supported in SQLite, so we use String with validation
+// Using PostgreSQL - enums could be used but keeping String for flexibility
 
 model Dish {
   id               String   @id @default(uuid())

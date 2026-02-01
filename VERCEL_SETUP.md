@@ -1,5 +1,13 @@
 # Vercel Deployment Setup Guide
 
+## ✅ Quick Setup (Already Done!)
+
+Your Neon PostgreSQL database is already set up and migrations have been applied!
+
+**Next Step:** Just add the environment variable in Vercel (see [VERCEL_ENV_VARS.md](./VERCEL_ENV_VARS.md))
+
+---
+
 ## ⚠️ Important: Database Configuration
 
 **SQLite does NOT work on Vercel.** Vercel's serverless functions have read-only filesystems, so you need to use a cloud database.
