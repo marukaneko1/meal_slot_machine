@@ -1,5 +1,3 @@
-'use server';
-
 import prisma from '@/lib/db';
 import type { NormalizedDishData } from '@/lib/types';
 
