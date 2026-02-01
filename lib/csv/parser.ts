@@ -89,6 +89,15 @@ function parseIntOrNull(value: string | undefined): number | null {
 }
 
 /**
+ * Validates if a URL is an absolute URL (starts with http:// or https://)
+ */
+function isValidAbsoluteUrl(url: string): boolean {
+  if (!url || !url.trim()) return false;
+  const trimmed = url.trim();
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+}
+
+/**
  * Validates slot category
  */
 function validateSlotCategory(value: string | undefined): SlotCategory | null {
@@ -173,7 +182,9 @@ export function validateAndNormalizeRow(
   const cookTimeMinutes = parseIntOrNull(row.cook_time_minutes);
   const servings = parseIntOrNull(row.servings);
   const notes = row.notes?.trim() || null;
-  const sourceUrl = row.source_url?.trim() || null;
+  // Normalize sourceUrl - ensure it's a valid absolute URL or null
+  const rawSourceUrl = row.source_url?.trim() || null;
+  const sourceUrl = rawSourceUrl && isValidAbsoluteUrl(rawSourceUrl) ? rawSourceUrl : null;
 
   // Parse list fields
   const ingredients = normalizeList(row.ingredients);

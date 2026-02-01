@@ -38,6 +38,15 @@ const kosherStyleColors: Record<string, string> = {
   unknown: 'bg-gray-500/20 text-gray-400',
 };
 
+/**
+ * Validates if a URL is absolute (starts with http:// or https://)
+ */
+function isValidUrl(url: string | null | undefined): boolean {
+  if (!url || !url.trim()) return false;
+  const trimmed = url.trim();
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+}
+
 export function DishCard({
   dish,
   showLock,
@@ -230,7 +239,7 @@ export function DishCard({
         )}
 
         {/* Source link */}
-        {dish.sourceUrl && (
+        {dish.sourceUrl && isValidUrl(dish.sourceUrl) && (
           <a
             href={dish.sourceUrl}
             target="_blank"

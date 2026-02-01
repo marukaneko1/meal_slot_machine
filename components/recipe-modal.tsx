@@ -1,11 +1,12 @@
 'use client';
 
-import { Fragment } from 'react';
-import { X, Clock, Utensils, ChefHat, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { X, Clock, Utensils, ChefHat, ExternalLink, AlertTriangle, ShoppingCart, Check } from 'lucide-react';
 import type { DishWithRelations } from '@/lib/types';
 import { SLOT_CATEGORY_LABELS } from '@/lib/types';
 import { Chip } from './ui/chip';
 import { cn } from '@/lib/utils/cn';
+import { addIngredientsToShoppingList } from '@/lib/utils/shopping-list';
 
 interface RecipeModalProps {
   dish: DishWithRelations | null;
@@ -27,16 +28,57 @@ const kosherStyleColors: Record<string, string> = {
   unknown: 'bg-gray-500/20 text-gray-400',
 };
 
+/**
+ * Validates if a URL is absolute (starts with http:// or https://)
+ */
+function isValidUrl(url: string | null | undefined): boolean {
+  if (!url || !url.trim()) return false;
+  const trimmed = url.trim();
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+}
+
 export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
+  const [addedToCart, setAddedToCart] = useState(false);
+  const [addedIngredients, setAddedIngredients] = useState<Set<string>>(new Set());
+
   if (!isOpen || !dish) return null;
 
   const totalTime = (dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0);
+
+  const handleAddToShoppingList = () => {
+    if (dish.ingredients.length === 0) {
+      alert('This recipe has no ingredients to add.');
+      return;
+    }
+
+    const ingredientNames = dish.ingredients.map((di) => di.ingredient.name);
+    addIngredientsToShoppingList(ingredientNames, dish.name);
+    setAddedToCart(true);
+    // Mark all ingredients as added
+    setAddedIngredients(new Set(ingredientNames));
+    setTimeout(() => {
+      setAddedToCart(false);
+      setAddedIngredients(new Set());
+    }, 3000);
+  };
+
+  const handleAddSingleIngredient = (ingredientName: string) => {
+    addIngredientsToShoppingList([ingredientName], dish.name);
+    setAddedIngredients((prev) => new Set([...prev, ingredientName]));
+    setTimeout(() => {
+      setAddedIngredients((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(ingredientName);
+        return newSet;
+      });
+    }, 2000);
+  };
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity"
+        className="fixed inset-0 bg-black/70 z-50 transition-opacity"
         onClick={onClose}
       />
 
@@ -128,20 +170,65 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
               {/* Ingredients List */}
               {dish.ingredients.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Utensils className="w-5 h-5 text-slot-gold" />
-                    Ingredients
-                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Utensils className="w-5 h-5 text-slot-gold" />
+                      Ingredients
+                    </h3>
+                    <button
+                      onClick={handleAddToShoppingList}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
+                        addedToCart
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                          : 'bg-slot-gold/10 hover:bg-slot-gold/20 text-slot-gold border border-slot-gold/30 hover:border-slot-gold/50'
+                      )}
+                    >
+                      {addedToCart ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Added!
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4" />
+                          Add to Shopping List
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <ul className="space-y-2">
-                    {dish.ingredients.map((di) => (
-                      <li
-                        key={di.ingredient.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-slot-gold flex-shrink-0" />
-                        <span className="text-white">{di.ingredient.name}</span>
-                      </li>
-                    ))}
+                    {dish.ingredients.map((di) => {
+                      const ingredientName = di.ingredient.name;
+                      const isAdded = addedIngredients.has(ingredientName);
+                      return (
+                        <li
+                          key={di.ingredient.id}
+                          className="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-slot-gold/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <span className="w-2 h-2 rounded-full bg-slot-gold flex-shrink-0" />
+                            <span className="text-white">{ingredientName}</span>
+                          </div>
+                          <button
+                            onClick={() => handleAddSingleIngredient(ingredientName)}
+                            className={cn(
+                              'p-2 rounded-lg transition-all flex-shrink-0',
+                              isAdded
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                                : 'bg-slot-gold/10 hover:bg-slot-gold/20 text-slot-gold border border-slot-gold/30 hover:border-slot-gold/50'
+                            )}
+                            title={isAdded ? 'Added to shopping list' : 'Add to shopping list'}
+                          >
+                            {isAdded ? (
+                              <Check className="w-4 h-4" />
+                            ) : (
+                              <ShoppingCart className="w-4 h-4" />
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -192,20 +279,34 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
                 </div>
               )}
 
-              {/* Source Link */}
-              {dish.sourceUrl && (
-                <div>
-                  <a
-                    href={dish.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-slot-purple hover:text-purple-400 transition-colors font-medium"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View Recipe Source
-                  </a>
-                </div>
-              )}
+              {/* Source Link - Always show section */}
+              <div className="pt-4 border-t border-slate-700">
+                <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                  <ExternalLink className="w-4 h-4 text-slot-gold" />
+                  Recipe Source
+                </h3>
+                {dish.sourceUrl && isValidUrl(dish.sourceUrl) ? (
+                  <>
+                    <a
+                      href={dish.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-slot-gold/10 hover:bg-slot-gold/20 border border-slot-gold/30 hover:border-slot-gold/50 text-slot-gold hover:text-yellow-400 transition-all font-medium group"
+                    >
+                      <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      <span>View Full Recipe on Source Website</span>
+                      <ExternalLink className="w-4 h-4 opacity-50" />
+                    </a>
+                    <p className="mt-2 text-xs text-gray-500 break-all">
+                      {dish.sourceUrl}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    {dish.sourceUrl ? 'Invalid source URL (must be a full URL starting with http:// or https://)' : 'No source URL available for this recipe'}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
