@@ -41,9 +41,9 @@ export function BottomNav() {
       {/* Background with blur and border */}
       <div className="absolute inset-0 bg-black/95 backdrop-blur-xl border-t border-slot-gold/30" />
       
-      {/* Content with safe area padding */}
-      <div className="relative px-4 pb-[env(safe-area-inset-bottom,8px)]">
-        <div className="flex items-center justify-around h-16">
+      {/* Content with minimal safe area padding - just enough for notched devices */}
+      <div className="relative px-4 pb-[max(env(safe-area-inset-bottom,0px),4px)] pt-2">
+        <div className="flex items-center justify-around h-14">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || 

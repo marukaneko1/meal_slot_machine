@@ -168,7 +168,7 @@ export default function ShoppingListPage() {
   const checkedItems = items.filter((item) => item.checked);
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-black text-white pt-6 pb-24 px-4 md:pt-8 md:pb-8 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Undo Notification */}
         {undoState.show && undoState.deletedItem && (

@@ -237,7 +237,7 @@ export default function AdminUploadPage() {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4">
+    <div className="min-h-screen pt-6 pb-24 md:py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
