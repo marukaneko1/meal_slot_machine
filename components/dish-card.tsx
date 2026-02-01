@@ -262,17 +262,20 @@ export function DishCard({
         )}
 
         {/* Source link */}
-        {dish.sourceUrl && isValidUrl(dish.sourceUrl) && (
-          <a
-            href={dish.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-slot-purple hover:text-purple-400 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Recipe source
-          </a>
-        )}
+        {(() => {
+          const validUrl = isValidUrl(dish.sourceUrl);
+          return validUrl ? (
+            <a
+              href={validUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-slot-purple hover:text-purple-400 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Recipe source
+            </a>
+          ) : null;
+        })()}
       </div>
     </div>
   );
