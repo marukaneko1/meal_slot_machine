@@ -4,8 +4,10 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Toggle } from '@/components/ui/toggle';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import type { CSVValidationResult, ImportResult } from '@/lib/types';
-import { SLOT_CATEGORY_LABELS, type SlotCategory } from '@/lib/types';
+import { SLOT_CATEGORY_LABELS, SLOT_CATEGORIES, KOSHER_STYLES, DIFFICULTY_LEVELS, STANDARD_ALLERGENS, type SlotCategory } from '@/lib/types';
 import {
   Upload,
   FileText,
@@ -14,8 +16,19 @@ import {
   AlertTriangle,
   X,
   ArrowRight,
+  Plus,
+  Save,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+
+/**
+ * Validates if a URL is an absolute URL (starts with http:// or https://)
+ */
+function isValidAbsoluteUrl(url: string): boolean {
+  if (!url || !url.trim()) return false;
+  const trimmed = url.trim();
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+}
 
 interface PreviewData {
   headers: string[];
@@ -28,8 +41,10 @@ interface PreviewData {
 }
 
 type Step = 'upload' | 'preview' | 'importing' | 'complete';
+type Tab = 'csv' | 'manual';
 
 export default function AdminUploadPage() {
+  const [tab, setTab] = useState<Tab>('csv');
   const [step, setStep] = useState<Step>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [csvContent, setCsvContent] = useState<string>('');
@@ -38,6 +53,27 @@ export default function AdminUploadPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Manual entry form state
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    slotCategory: 'main_chicken' as SlotCategory,
+    ingredients: '',
+    kosher: false,
+    kosherStyle: 'unknown' as typeof KOSHER_STYLES[number],
+    difficulty: 'unknown' as typeof DIFFICULTY_LEVELS[number],
+    mainProtein: '',
+    prepTimeMinutes: '',
+    cookTimeMinutes: '',
+    servings: '',
+    cuisine: '',
+    tags: '',
+    allergens: [] as string[],
+    notes: '',
+    sourceUrl: '',
+  });
+  const [isSavingManual, setIsSavingManual] = useState(false);
+  const [manualSuccess, setManualSuccess] = useState(false);
 
   const handleFileSelect = useCallback(async (selectedFile: File) => {
     setFile(selectedFile);
@@ -120,6 +156,86 @@ export default function AdminUploadPage() {
     setError(null);
   };
 
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingManual(true);
+    setError(null);
+    setManualSuccess(false);
+
+    try {
+      // Parse ingredients and tags from comma-separated strings
+      const ingredients = manualForm.ingredients
+        .split(',')
+        .map((i) => i.trim())
+        .filter(Boolean);
+      const tags = manualForm.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      // Validate sourceUrl if provided
+      let sourceUrl = manualForm.sourceUrl?.trim() || null;
+      if (sourceUrl && !isValidAbsoluteUrl(sourceUrl)) {
+        setError('Source URL must be a full URL starting with http:// or https://');
+        setIsSavingManual(false);
+        return;
+      }
+
+      const response = await fetch('/api/admin/dishes/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: manualForm.name,
+          slotCategory: manualForm.slotCategory,
+          ingredients,
+          kosher: manualForm.kosher,
+          kosherStyle: manualForm.kosherStyle,
+          difficulty: manualForm.difficulty,
+          mainProtein: manualForm.mainProtein || null,
+          prepTimeMinutes: manualForm.prepTimeMinutes || null,
+          cookTimeMinutes: manualForm.cookTimeMinutes || null,
+          servings: manualForm.servings || null,
+          cuisine: manualForm.cuisine || null,
+          tags,
+          allergens: manualForm.allergens,
+          notes: manualForm.notes || null,
+          sourceUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create dish');
+      }
+
+      setManualSuccess(true);
+      // Reset form
+      setManualForm({
+        name: '',
+        slotCategory: 'main_chicken',
+        ingredients: '',
+        kosher: false,
+        kosherStyle: 'unknown',
+        difficulty: 'unknown',
+        mainProtein: '',
+        prepTimeMinutes: '',
+        cookTimeMinutes: '',
+        servings: '',
+        cuisine: '',
+        tags: '',
+        allergens: [],
+        notes: '',
+        sourceUrl: '',
+      });
+
+      setTimeout(() => setManualSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create dish');
+    } finally {
+      setIsSavingManual(false);
+    }
+  };
+
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -127,16 +243,45 @@ export default function AdminUploadPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Upload className="w-8 h-8 text-slot-purple" />
-            CSV Import
+            Add Dishes
           </h1>
           <p className="text-gray-400 mt-2">
-            Upload a CSV file to import dishes into your library
+            Upload CSV files or manually add dishes to your library
           </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          {(['upload', 'preview', 'complete'] as const).map((s, i) => (
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-slate-700">
+          <button
+            onClick={() => setTab('csv')}
+            className={cn(
+              'px-6 py-3 font-medium transition-colors border-b-2',
+              tab === 'csv'
+                ? 'border-slot-gold text-slot-gold'
+                : 'border-transparent text-gray-400 hover:text-gray-300'
+            )}
+          >
+            <FileText className="w-4 h-4 inline mr-2" />
+            CSV Import
+          </button>
+          <button
+            onClick={() => setTab('manual')}
+            className={cn(
+              'px-6 py-3 font-medium transition-colors border-b-2',
+              tab === 'manual'
+                ? 'border-slot-gold text-slot-gold'
+                : 'border-transparent text-gray-400 hover:text-gray-300'
+            )}
+          >
+            <Plus className="w-4 h-4 inline mr-2" />
+            Manual Entry
+          </button>
+        </div>
+
+        {/* Progress Steps - Only show for CSV import */}
+        {tab === 'csv' && (
+          <div className="flex items-center justify-center gap-4 mb-8">
+            {(['upload', 'preview', 'complete'] as const).map((s, i) => (
             <div key={s} className="flex items-center">
               <div
                 className={cn(
@@ -167,7 +312,8 @@ export default function AdminUploadPage() {
               )}
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (
@@ -185,6 +331,223 @@ export default function AdminUploadPage() {
           </div>
         )}
 
+        {/* Manual Entry Form */}
+        {tab === 'manual' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Dish Manually</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {manualSuccess && (
+                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <p className="text-green-400">Dish created successfully! "manually added" tag was automatically added.</p>
+                </div>
+              )}
+
+              <form onSubmit={handleManualSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Name */}
+                  <div className="md:col-span-2">
+                    <Input
+                      label="Dish Name *"
+                      value={manualForm.name}
+                      onChange={(e) => setManualForm({ ...manualForm, name: e.target.value })}
+                      required
+                      placeholder="e.g., Chicken Schnitzel"
+                    />
+                  </div>
+
+                  {/* Slot Category */}
+                  <Select
+                    label="Slot Category *"
+                    value={manualForm.slotCategory}
+                    onChange={(e) => setManualForm({ ...manualForm, slotCategory: e.target.value as SlotCategory })}
+                    options={SLOT_CATEGORIES.map((cat) => ({
+                      value: cat,
+                      label: SLOT_CATEGORY_LABELS[cat],
+                    }))}
+                    required
+                  />
+
+                  {/* Kosher */}
+                  <div>
+                    <label className="block text-sm font-medium text-slot-gold mb-1.5">
+                      Kosher
+                    </label>
+                    <Toggle
+                      checked={manualForm.kosher}
+                      onChange={(checked) => setManualForm({ ...manualForm, kosher: checked })}
+                      label={manualForm.kosher ? 'Yes' : 'No'}
+                    />
+                  </div>
+
+                  {/* Kosher Style */}
+                  <Select
+                    label="Kosher Style"
+                    value={manualForm.kosherStyle}
+                    onChange={(e) => setManualForm({ ...manualForm, kosherStyle: e.target.value as typeof KOSHER_STYLES[number] })}
+                    options={KOSHER_STYLES.map((style) => ({
+                      value: style,
+                      label: style.charAt(0).toUpperCase() + style.slice(1),
+                    }))}
+                  />
+
+                  {/* Difficulty */}
+                  <Select
+                    label="Difficulty"
+                    value={manualForm.difficulty}
+                    onChange={(e) => setManualForm({ ...manualForm, difficulty: e.target.value as typeof DIFFICULTY_LEVELS[number] })}
+                    options={DIFFICULTY_LEVELS.map((diff) => ({
+                      value: diff,
+                      label: diff.charAt(0).toUpperCase() + diff.slice(1),
+                    }))}
+                  />
+
+                  {/* Main Protein */}
+                  <Input
+                    label="Main Protein"
+                    value={manualForm.mainProtein}
+                    onChange={(e) => setManualForm({ ...manualForm, mainProtein: e.target.value })}
+                    placeholder="e.g., chicken, beef, fish"
+                  />
+
+                  {/* Cuisine */}
+                  <Input
+                    label="Cuisine"
+                    value={manualForm.cuisine}
+                    onChange={(e) => setManualForm({ ...manualForm, cuisine: e.target.value })}
+                    placeholder="e.g., Italian, Asian"
+                  />
+
+                  {/* Prep Time */}
+                  <Input
+                    label="Prep Time (minutes)"
+                    type="number"
+                    value={manualForm.prepTimeMinutes}
+                    onChange={(e) => setManualForm({ ...manualForm, prepTimeMinutes: e.target.value })}
+                    placeholder="15"
+                  />
+
+                  {/* Cook Time */}
+                  <Input
+                    label="Cook Time (minutes)"
+                    type="number"
+                    value={manualForm.cookTimeMinutes}
+                    onChange={(e) => setManualForm({ ...manualForm, cookTimeMinutes: e.target.value })}
+                    placeholder="30"
+                  />
+
+                  {/* Servings */}
+                  <Input
+                    label="Servings"
+                    type="number"
+                    value={manualForm.servings}
+                    onChange={(e) => setManualForm({ ...manualForm, servings: e.target.value })}
+                    placeholder="4"
+                  />
+                </div>
+
+                {/* Ingredients */}
+                <div>
+                  <Input
+                    label="Ingredients (comma-separated) *"
+                    value={manualForm.ingredients}
+                    onChange={(e) => setManualForm({ ...manualForm, ingredients: e.target.value })}
+                    required
+                    placeholder="chicken breast, breadcrumbs, eggs, flour"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple ingredients with commas</p>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <Input
+                    label="Tags (comma-separated)"
+                    value={manualForm.tags}
+                    onChange={(e) => setManualForm({ ...manualForm, tags: e.target.value })}
+                    placeholder="quick, comfort food, crispy"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">"manually added" tag will be added automatically</p>
+                </div>
+
+                {/* Allergens */}
+                <div>
+                  <label className="block text-sm font-medium text-slot-gold mb-2">
+                    Allergens
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {STANDARD_ALLERGENS.map((allergen) => (
+                      <label key={allergen} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={manualForm.allergens.includes(allergen)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setManualForm({
+                                ...manualForm,
+                                allergens: [...manualForm.allergens, allergen],
+                              });
+                            } else {
+                              setManualForm({
+                                ...manualForm,
+                                allergens: manualForm.allergens.filter((a) => a !== allergen),
+                              });
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-slot-gold/50 text-slot-gold focus:ring-slot-gold"
+                        />
+                        <span className="text-sm text-gray-300 capitalize">{allergen}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-slot-gold mb-1.5">
+                    Notes
+                  </label>
+                  <textarea
+                    value={manualForm.notes}
+                    onChange={(e) => setManualForm({ ...manualForm, notes: e.target.value })}
+                    className="input-field w-full min-h-[100px] resize-y"
+                    placeholder="Additional notes about this dish..."
+                  />
+                </div>
+
+                {/* Source URL */}
+                <div>
+                  <Input
+                    label="Source URL"
+                    type="url"
+                    value={manualForm.sourceUrl}
+                    onChange={(e) => setManualForm({ ...manualForm, sourceUrl: e.target.value })}
+                    placeholder="https://example.com/recipe"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Link to the original recipe source</p>
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex items-center justify-end gap-4 pt-4 border-t border-slate-700">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isSavingManual || !manualForm.name || !manualForm.slotCategory || !manualForm.ingredients}
+                    isLoading={isSavingManual}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSavingManual ? 'Saving...' : 'Save Dish'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* CSV Upload Steps */}
+        {tab === 'csv' && (
+          <>
         {/* Upload Step */}
         {step === 'upload' && (
           <Card>
@@ -492,6 +855,8 @@ export default function AdminUploadPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+          </>
         )}
       </div>
     </div>
