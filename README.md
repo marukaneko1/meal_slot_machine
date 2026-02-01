@@ -57,6 +57,19 @@ A production-ready web application for generating meal plans using a slot-machin
 5. **Open your browser:**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
+## 🚢 Deployment (Vercel)
+
+**⚠️ Important:** SQLite does NOT work on Vercel. You must use PostgreSQL.
+
+See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for detailed setup instructions.
+
+**Quick steps:**
+1. Create a Vercel Postgres database (or use Supabase/Neon)
+2. Update `prisma/schema.prisma` to use `provider = "postgresql"`
+3. Set `DATABASE_URL` environment variable in Vercel
+4. Run migrations: `npx prisma migrate deploy`
+5. Deploy!
+
 ## 📁 Project Structure
 
 ```
