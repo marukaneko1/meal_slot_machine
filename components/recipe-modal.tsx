@@ -64,7 +64,11 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
 
   const handleAddSingleIngredient = (ingredientName: string) => {
     addIngredientsToShoppingList([ingredientName], dish.name);
-    setAddedIngredients((prev) => new Set([...prev, ingredientName]));
+    setAddedIngredients((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(ingredientName);
+      return newSet;
+    });
     setTimeout(() => {
       setAddedIngredients((prev) => {
         const newSet = new Set(prev);
