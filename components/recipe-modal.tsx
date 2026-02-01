@@ -30,11 +30,34 @@ const kosherStyleColors: Record<string, string> = {
 
 /**
  * Validates if a URL is absolute (starts with http:// or https://)
+ * Also normalizes URLs that might be missing the protocol
  */
-function isValidUrl(url: string | null | undefined): boolean {
-  if (!url || !url.trim()) return false;
-  const trimmed = url.trim();
-  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+function isValidUrl(url: string | null | undefined): string | null {
+  if (!url || !url.trim()) return null;
+  
+  let normalized = url.trim();
+  
+  // If it doesn't start with http:// or https://, try to add it
+  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    if (normalized.startsWith('www.')) {
+      normalized = 'https://' + normalized;
+    } else if (normalized.includes('.') && !normalized.includes(' ')) {
+      normalized = 'https://www.' + normalized;
+    } else {
+      return null;
+    }
+  }
+  
+  // Validate it's a proper URL
+  try {
+    const urlObj = new URL(normalized);
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
 }
 
 export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
@@ -289,27 +312,30 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
                   <ExternalLink className="w-4 h-4 text-slot-gold" />
                   Recipe Source
                 </h3>
-                {dish.sourceUrl && isValidUrl(dish.sourceUrl) ? (
-                  <>
-                    <a
-                      href={dish.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-slot-gold/10 hover:bg-slot-gold/20 border border-slot-gold/30 hover:border-slot-gold/50 text-slot-gold hover:text-yellow-400 transition-all font-medium group"
-                    >
-                      <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      <span>View Full Recipe on Source Website</span>
-                      <ExternalLink className="w-4 h-4 opacity-50" />
-                    </a>
-                    <p className="mt-2 text-xs text-gray-500 break-all">
-                      {dish.sourceUrl}
+                {(() => {
+                  const validUrl = isValidUrl(dish.sourceUrl);
+                  return validUrl ? (
+                    <>
+                      <a
+                        href={validUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-slot-gold/10 hover:bg-slot-gold/20 border border-slot-gold/30 hover:border-slot-gold/50 text-slot-gold hover:text-yellow-400 transition-all font-medium group"
+                      >
+                        <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span>View Full Recipe on Source Website</span>
+                        <ExternalLink className="w-4 h-4 opacity-50" />
+                      </a>
+                      <p className="mt-2 text-xs text-gray-500 break-all">
+                        {validUrl}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">
+                      {dish.sourceUrl ? 'Invalid source URL (must be a full URL starting with http:// or https://)' : 'No source URL available for this recipe'}
                     </p>
-                  </>
-                ) : (
-                  <p className="text-sm text-gray-500 italic">
-                    {dish.sourceUrl ? 'Invalid source URL (must be a full URL starting with http:// or https://)' : 'No source URL available for this recipe'}
-                  </p>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </div>

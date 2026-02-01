@@ -89,12 +89,59 @@ function parseIntOrNull(value: string | undefined): number | null {
 }
 
 /**
+ * Normalizes a URL to ensure it's a valid absolute URL
+ */
+function normalizeUrl(url: string): string | null {
+  if (!url || !url.trim()) return null;
+  
+  let normalized = url.trim();
+  
+  // If it doesn't start with http:// or https://, add https://
+  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    // Check if it looks like a domain
+    if (normalized.startsWith('www.')) {
+      normalized = 'https://' + normalized;
+    } else if (normalized.includes('.') && !normalized.includes(' ')) {
+      // Looks like a domain without www
+      normalized = 'https://www.' + normalized;
+    } else {
+      // Can't normalize, return null
+      return null;
+    }
+  }
+  
+  // Remove trailing slash (optional, but cleaner)
+  normalized = normalized.replace(/\/+$/, '');
+  
+  // Basic validation - must be a valid URL format
+  try {
+    const urlObj = new URL(normalized);
+    // Must have http or https protocol
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Validates if a URL is an absolute URL (starts with http:// or https://)
  */
 function isValidAbsoluteUrl(url: string): boolean {
   if (!url || !url.trim()) return false;
   const trimmed = url.trim();
-  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return false;
+  }
+  // Additional validation using URL constructor
+  try {
+    new URL(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -184,7 +231,14 @@ export function validateAndNormalizeRow(
   const notes = row.notes?.trim() || null;
   // Normalize sourceUrl - ensure it's a valid absolute URL or null
   const rawSourceUrl = row.source_url?.trim() || null;
-  const sourceUrl = rawSourceUrl && isValidAbsoluteUrl(rawSourceUrl) ? rawSourceUrl : null;
+  let sourceUrl: string | null = null;
+  if (rawSourceUrl) {
+    // Try to normalize the URL (adds https:// if missing)
+    const normalized = normalizeUrl(rawSourceUrl);
+    if (normalized && isValidAbsoluteUrl(normalized)) {
+      sourceUrl = normalized;
+    }
+  }
 
   // Parse list fields
   const ingredients = normalizeList(row.ingredients);

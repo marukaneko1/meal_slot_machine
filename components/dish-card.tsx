@@ -40,11 +40,34 @@ const kosherStyleColors: Record<string, string> = {
 
 /**
  * Validates if a URL is absolute (starts with http:// or https://)
+ * Also normalizes URLs that might be missing the protocol
  */
-function isValidUrl(url: string | null | undefined): boolean {
-  if (!url || !url.trim()) return false;
-  const trimmed = url.trim();
-  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+function isValidUrl(url: string | null | undefined): string | null {
+  if (!url || !url.trim()) return null;
+  
+  let normalized = url.trim();
+  
+  // If it doesn't start with http:// or https://, try to add it
+  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    if (normalized.startsWith('www.')) {
+      normalized = 'https://' + normalized;
+    } else if (normalized.includes('.') && !normalized.includes(' ')) {
+      normalized = 'https://www.' + normalized;
+    } else {
+      return null;
+    }
+  }
+  
+  // Validate it's a proper URL
+  try {
+    const urlObj = new URL(normalized);
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
 }
 
 export function DishCard({
