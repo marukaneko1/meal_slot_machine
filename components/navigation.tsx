@@ -11,13 +11,16 @@ import {
   Users,
   Menu,
   X,
+  ShoppingCart,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getShoppingListCount } from '@/lib/utils/shopping-list';
 
 const navLinks = [
   { href: '/', label: 'Spin', icon: Dices },
   { href: '/plans', label: 'Plans', icon: CalendarDays },
   { href: '/library', label: 'Library', icon: BookOpen },
+  { href: '/shopping', label: 'Shopping', icon: ShoppingCart },
 ];
 
 const adminLinks = [
@@ -28,6 +31,18 @@ const adminLinks = [
 export function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shoppingCount, setShoppingCount] = useState(0);
+
+  // Load shopping list count and listen for updates
+  useEffect(() => {
+    const updateCount = () => {
+      setShoppingCount(getShoppingListCount());
+    };
+
+    updateCount();
+    window.addEventListener('shopping-list-updated', updateCount);
+    return () => window.removeEventListener('shopping-list-updated', updateCount);
+  }, []);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-slot-gold/30">
@@ -48,12 +63,13 @@ export function Navigation() {
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
+              const isShopping = link.href === '/shopping';
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200',
+                    'relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200',
                     isActive
                       ? 'bg-slot-gold text-black'
                       : 'text-gray-400 hover:text-slot-gold hover:bg-slot-gold/10'
@@ -61,6 +77,11 @@ export function Navigation() {
                 >
                   <Icon className="w-4 h-4" />
                   {link.label}
+                  {isShopping && shoppingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                      {shoppingCount > 9 ? '9+' : shoppingCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -108,13 +129,14 @@ export function Navigation() {
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 const isActive = pathname === link.href;
+                const isShopping = link.href === '/shopping';
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200',
+                      'relative flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200',
                       isActive
                         ? 'bg-slot-gold text-black'
                         : 'text-gray-400 hover:text-slot-gold hover:bg-slot-gold/10'
@@ -122,6 +144,11 @@ export function Navigation() {
                   >
                     <Icon className="w-5 h-5" />
                     {link.label}
+                    {isShopping && shoppingCount > 0 && (
+                      <span className="ml-auto w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                        {shoppingCount > 9 ? '9+' : shoppingCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
