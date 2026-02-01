@@ -341,7 +341,7 @@ export default function AdminUploadPage() {
               {manualSuccess && (
                 <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 text-green-400" />
-                  <p className="text-green-400">Dish created successfully! "manually added" tag was automatically added.</p>
+                  <p className="text-green-400">Dish created successfully! &quot;manually added&quot; tag was automatically added.</p>
                 </div>
               )}
 
@@ -468,7 +468,7 @@ export default function AdminUploadPage() {
                     onChange={(e) => setManualForm({ ...manualForm, tags: e.target.value })}
                     placeholder="quick, comfort food, crispy"
                   />
-                  <p className="text-xs text-gray-500 mt-1">"manually added" tag will be added automatically</p>
+                  <p className="text-xs text-gray-500 mt-1">&quot;manually added&quot; tag will be added automatically</p>
                 </div>
 
                 {/* Allergens */}
