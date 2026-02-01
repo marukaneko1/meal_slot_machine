@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SlotMachine } from '@/components/slot-machine';
 import { FilterBar } from '@/components/filter-bar';
-import { Select } from '@/components/ui/select';
 import type { FilterOptions, SlotCategory, DishWithRelations, LockedDishes } from '@/lib/types';
 import { SLOT_CATEGORIES } from '@/lib/types';
 import { CheckCircle, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
@@ -161,86 +160,136 @@ export default function HomePage() {
   );
 
   return (
-    <div className="min-h-screen py-6 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Save Success Toast */}
-        {saveSuccess && (
-          <div className="fixed top-20 right-4 bg-green-500/90 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-bounce-in z-50">
-            <CheckCircle className="w-5 h-5" />
-            Plan saved successfully!
-          </div>
-        )}
+    <div className="min-h-[calc(100vh-6rem)] md:min-h-screen flex flex-col">
+      {/* Save Success Toast */}
+      {saveSuccess && (
+        <div className="fixed top-4 md:top-20 right-4 bg-green-500/90 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-bounce-in z-50">
+          <CheckCircle className="w-5 h-5" />
+          Plan saved successfully!
+        </div>
+      )}
 
-        {/* Slot Machine */}
-        <SlotMachine
-          onSpin={(f, l) => handleSpin({ ...filters, ...f }, l)}
-          onSave={handleSave}
-          filters={filters}
-          categories={categories}
-        />
+      {/* Mobile: Centered slot machine container */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-4 md:py-6">
+        <div className="w-full max-w-5xl">
+          {/* Slot Machine */}
+          <SlotMachine
+            onSpin={(f, l) => handleSpin({ ...filters, ...f }, l)}
+            onSave={handleSave}
+            filters={filters}
+            categories={categories}
+          />
 
-        {/* Collapsible Filters Section */}
-        <div className="mt-8">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(
-              "w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all",
-              "bg-slate-800/50 hover:bg-slate-800 border border-slate-700",
-              showFilters && "rounded-b-none border-b-0"
-            )}
-          >
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Settings2 className="w-4 h-4" />
-              <span>Filters & Settings</span>
-              {filters.kosherOnly && (
-                <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">
-                  Kosher Only
-                </span>
+          {/* Collapsible Filters Section - Hidden on mobile by default, show on desktop */}
+          <div className="mt-6 md:mt-8 hidden md:block">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all",
+                "bg-slate-800/50 hover:bg-slate-800 border border-slate-700",
+                showFilters && "rounded-b-none border-b-0"
               )}
-              {selectedProfileId && profiles.find(p => p.id === selectedProfileId) && (
-                <span className="px-2 py-0.5 text-xs rounded-full bg-slot-gold/20 text-slot-gold">
-                  {profiles.find(p => p.id === selectedProfileId)?.name}
-                </span>
-              )}
-            </div>
-            {showFilters ? (
-              <ChevronUp className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-
-          {/* Expandable Content */}
-          <div className={cn(
-            "overflow-hidden transition-all duration-300 ease-in-out",
-            showFilters ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-          )}>
-            <div className="p-4 bg-slate-800/30 border border-t-0 border-slate-700 rounded-b-lg space-y-4">
-              {/* Profile Selector - Compact */}
-              <div className="flex items-center gap-3">
-                <label className="text-xs text-gray-500 whitespace-nowrap">Profile:</label>
-                <select
-                  value={selectedProfileId}
-                  onChange={(e) => setSelectedProfileId(e.target.value)}
-                  className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-slot-gold focus:outline-none"
-                >
-                  <option value="">All Categories</option>
-                  {profiles.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+            >
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Settings2 className="w-4 h-4" />
+                <span>Filters & Settings</span>
+                {filters.kosherOnly && (
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">
+                    Kosher Only
+                  </span>
+                )}
+                {selectedProfileId && profiles.find(p => p.id === selectedProfileId) && (
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-slot-gold/20 text-slot-gold">
+                    {profiles.find(p => p.id === selectedProfileId)?.name}
+                  </span>
+                )}
               </div>
+              {showFilters ? (
+                <ChevronUp className="w-4 h-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              )}
+            </button>
 
-              {/* Filter Bar - Compact */}
-              <FilterBar
-                filters={filters}
-                onChange={setFilters}
-                allIngredients={filterData.ingredients}
-                allCuisines={filterData.cuisines}
-                allMainProteins={filterData.mainProteins}
-                compact
-              />
+            {/* Expandable Content */}
+            <div className={cn(
+              "overflow-hidden transition-all duration-300 ease-in-out",
+              showFilters ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+            )}>
+              <div className="p-4 bg-slate-800/30 border border-t-0 border-slate-700 rounded-b-lg space-y-4">
+                {/* Profile Selector - Compact */}
+                <div className="flex items-center gap-3">
+                  <label className="text-xs text-gray-500 whitespace-nowrap">Profile:</label>
+                  <select
+                    value={selectedProfileId}
+                    onChange={(e) => setSelectedProfileId(e.target.value)}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-slot-gold focus:outline-none"
+                  >
+                    <option value="">All Categories</option>
+                    {profiles.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filter Bar - Compact */}
+                <FilterBar
+                  filters={filters}
+                  onChange={setFilters}
+                  allIngredients={filterData.ingredients}
+                  allCuisines={filterData.cuisines}
+                  allMainProteins={filterData.mainProteins}
+                  compact
+                />
+              </div>
             </div>
+          </div>
+
+          {/* Mobile: Compact filter toggle */}
+          <div className="mt-4 md:hidden">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all text-sm",
+                "bg-slate-800/30 border border-slate-700/50 text-gray-500",
+                showFilters && "bg-slate-800/50 text-gray-300"
+              )}
+            >
+              <Settings2 className="w-4 h-4" />
+              <span>{showFilters ? 'Hide Filters' : 'Filters'}</span>
+              {showFilters ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+
+            {/* Mobile filters content */}
+            {showFilters && (
+              <div className="mt-3 p-3 bg-slate-800/30 border border-slate-700/50 rounded-lg space-y-3 animate-slide-up">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-500 whitespace-nowrap">Profile:</label>
+                  <select
+                    value={selectedProfileId}
+                    onChange={(e) => setSelectedProfileId(e.target.value)}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-slot-gold focus:outline-none"
+                  >
+                    <option value="">All Categories</option>
+                    {profiles.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <FilterBar
+                  filters={filters}
+                  onChange={setFilters}
+                  allIngredients={filterData.ingredients}
+                  allCuisines={filterData.cuisines}
+                  allMainProteins={filterData.mainProteins}
+                  compact
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

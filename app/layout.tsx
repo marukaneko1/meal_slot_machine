@@ -98,11 +98,11 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-black text-white">
         <PWAProvider>
-          {/* Top navigation - visible on desktop, minimal on mobile */}
+          {/* Top navigation - desktop only */}
           <Navigation />
           
-          {/* Main content with safe area padding */}
-          <main className="pt-14 pb-20 md:pb-4 min-h-screen safe-area-inset">
+          {/* Main content - no top padding on mobile, has top padding on desktop */}
+          <main className="pt-0 md:pt-14 pb-24 md:pb-4 min-h-screen">
             {children}
           </main>
           

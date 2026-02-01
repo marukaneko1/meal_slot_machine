@@ -42,7 +42,8 @@ export function Navigation() {
   }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-slot-gold/30 safe-area-top">
+    // Hide entire nav on mobile - we use bottom nav instead
+    <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-slot-gold/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
@@ -55,8 +56,8 @@ export function Navigation() {
             </span>
           </Link>
 
-          {/* Desktop Navigation - Hidden on mobile (we use bottom nav) */}
-          <div className="hidden md:flex items-center gap-1">
+          {/* Desktop Navigation */}
+          <div className="flex items-center gap-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
@@ -104,11 +105,6 @@ export function Navigation() {
                 </Link>
               );
             })}
-          </div>
-
-          {/* Mobile: Show current page title */}
-          <div className="md:hidden flex items-center">
-            {/* Optional: Show page-specific actions here */}
           </div>
         </div>
       </div>

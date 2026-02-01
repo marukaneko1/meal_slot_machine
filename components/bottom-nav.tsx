@@ -37,46 +37,52 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-slot-gold/30 safe-area-bottom">
-      <div className="flex items-center justify-around h-16 px-2">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href || 
-            (item.href !== '/' && pathname.startsWith(item.href));
-          const isShopping = item.href === '/shopping';
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+      {/* Background with blur and border */}
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-xl border-t border-slot-gold/30" />
+      
+      {/* Content with safe area padding */}
+      <div className="relative px-4 pb-[env(safe-area-inset-bottom,8px)]">
+        <div className="flex items-center justify-around h-16">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || 
+              (item.href !== '/' && pathname.startsWith(item.href));
+            const isShopping = item.href === '/shopping';
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={handleTap}
-              className={cn(
-                'relative flex flex-col items-center justify-center flex-1 py-2 rounded-lg transition-all duration-200 active:scale-95',
-                isActive
-                  ? 'text-slot-gold'
-                  : 'text-gray-500 hover:text-gray-300'
-              )}
-            >
-              <div className="relative">
-                <Icon className={cn('w-6 h-6 transition-transform', isActive && 'scale-110')} />
-                {isShopping && shoppingCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
-                    {shoppingCount > 99 ? '99+' : shoppingCount}
-                  </span>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={handleTap}
+                className={cn(
+                  'relative flex flex-col items-center justify-center flex-1 py-2 rounded-lg transition-all duration-200 active:scale-95',
+                  isActive
+                    ? 'text-slot-gold'
+                    : 'text-gray-500 hover:text-gray-300'
                 )}
-              </div>
-              <span className={cn(
-                'text-[10px] font-medium mt-1 transition-all',
-                isActive ? 'text-slot-gold' : 'text-gray-500'
-              )}>
-                {item.label}
-              </span>
-              {isActive && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-slot-gold rounded-full" />
-              )}
-            </Link>
-          );
-        })}
+              >
+                <div className="relative">
+                  <Icon className={cn('w-6 h-6 transition-transform', isActive && 'scale-110')} />
+                  {isShopping && shoppingCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                      {shoppingCount > 99 ? '99+' : shoppingCount}
+                    </span>
+                  )}
+                </div>
+                <span className={cn(
+                  'text-[10px] font-medium mt-1 transition-all',
+                  isActive ? 'text-slot-gold' : 'text-gray-500'
+                )}>
+                  {item.label}
+                </span>
+                {isActive && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-slot-gold rounded-full" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
