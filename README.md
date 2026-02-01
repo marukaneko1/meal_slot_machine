@@ -199,13 +199,13 @@ View and edit data directly:
 npm run db:studio
 ```
 
-## 🔐 Admin Authentication
+## 🔐 Admin Access
 
-The admin routes (`/admin/*`) can be protected with a simple password:
+**Admin routes are publicly accessible** - no authentication required.
 
-1. Set `ADMIN_PASSWORD` in `.env`
-2. The app uses session cookies for authentication
-3. Sessions expire after 24 hours
+The admin routes (`/admin/*`) include:
+- `/admin/upload` - Upload CSV files or manually add dishes
+- `/admin/profiles` - Manage customer profiles
 
 ## 🧪 API Endpoints
 

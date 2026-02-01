@@ -43,29 +43,10 @@ export async function loginAdmin(password: string): Promise<{ success: boolean; 
 
 /**
  * Validates the current admin session
+ * NOTE: Admin authentication is disabled - always returns true
  */
 export async function validateAdminSession(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-
-  if (!token) {
-    return false;
-  }
-
-  const session = await prisma.adminSession.findUnique({
-    where: { token },
-  });
-
-  if (!session) {
-    return false;
-  }
-
-  if (session.expiresAt < new Date()) {
-    // Clean up expired session
-    await prisma.adminSession.delete({ where: { id: session.id } });
-    return false;
-  }
-
+  // Admin authentication disabled - all routes are public
   return true;
 }
 
