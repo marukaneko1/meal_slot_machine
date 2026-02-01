@@ -372,6 +372,42 @@ main {
   animation: slide-in-from-top 0.3s ease-out forwards;
 }
 
+/* Splash screen animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slot-shake {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px) rotate(-2deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px) rotate(2deg);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-slot-shake {
+  animation: slot-shake 0.15s ease-in-out infinite;
+}
+
+.duration-400 {
+  transition-duration: 400ms;
+}
+
 /* Print styles */
 @media print {
   body {

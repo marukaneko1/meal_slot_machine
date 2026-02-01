@@ -3,6 +3,7 @@ import './globals.css';
 import { Navigation } from '@/components/navigation';
 import { BottomNav } from '@/components/bottom-nav';
 import { PWAProvider } from '@/components/pwa-provider';
+import { AppWrapper } from '@/components/app-wrapper';
 
 export const metadata: Metadata = {
   title: 'Meal Slot - Spin Your Meals',
@@ -97,18 +98,20 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="antialiased bg-black text-white">
-        <PWAProvider>
-          {/* Top navigation - desktop only */}
-          <Navigation />
-          
-          {/* Main content - no top padding on mobile, has top padding on desktop */}
-          <main className="pt-0 md:pt-14 pb-24 md:pb-4 min-h-screen">
-            {children}
-          </main>
-          
-          {/* Bottom navigation - mobile only */}
-          <BottomNav />
-        </PWAProvider>
+        <AppWrapper>
+          <PWAProvider>
+            {/* Top navigation - desktop only */}
+            <Navigation />
+            
+            {/* Main content - no top padding on mobile, has top padding on desktop */}
+            <main className="pt-0 md:pt-14 pb-24 md:pb-4 min-h-screen">
+              {children}
+            </main>
+            
+            {/* Bottom navigation - mobile only */}
+            <BottomNav />
+          </PWAProvider>
+        </AppWrapper>
       </body>
     </html>
   );
