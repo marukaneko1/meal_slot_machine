@@ -15,7 +15,7 @@ import {
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
-interface FilterBarProps {
+export interface FilterBarProps {
   filters: FilterOptions;
   onChange: (filters: FilterOptions) => void;
   allIngredients?: string[];
@@ -25,6 +25,7 @@ interface FilterBarProps {
   showSearch?: boolean;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  compact?: boolean;
 }
 
 export function FilterBar({
@@ -37,6 +38,7 @@ export function FilterBar({
   showSearch = false,
   searchQuery = '',
   onSearchChange,
+  compact = false,
 }: FilterBarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [ingredientSearch, setIngredientSearch] = useState('');
@@ -63,6 +65,28 @@ export function FilterBar({
     onChange({});
     onSearchChange?.('');
   };
+
+  // Compact version - just a row of quick toggles
+  if (compact) {
+    return (
+      <div className={cn('flex flex-wrap items-center gap-4', className)}>
+        <Toggle
+          checked={filters.kosherOnly || false}
+          onChange={(checked) => onChange({ ...filters, kosherOnly: checked })}
+          label="Kosher Only"
+        />
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
+          >
+            <X className="w-3 h-3" />
+            Clear
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={cn('bg-black/50 rounded-2xl border border-slot-gold/30', className)}>
