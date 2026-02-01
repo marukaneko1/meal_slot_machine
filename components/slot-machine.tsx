@@ -131,8 +131,8 @@ function SlotReel({
           </div>
         )}
 
-        {/* Result Display */}
-        {!internalSpinning && showResult && dish && !error && (
+        {/* Result Display - only show when NOT locked */}
+        {!internalSpinning && showResult && dish && !error && !isLocked && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-2 animate-bounce-in">
             <div className="text-4xl sm:text-5xl mb-1">
               {categoryEmoji[category]}
@@ -247,6 +247,13 @@ export function SlotMachine({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSpin = useCallback(async () => {
+    if (isSpinning) return;
+    
+    // Haptic feedback for mobile
+    if ('vibrate' in navigator) {
+      navigator.vibrate([50, 30, 50]);
+    }
+    
     setIsSpinning(true);
     setErrors({});
     setWarnings([]);
@@ -282,7 +289,7 @@ export function SlotMachine({
     setTimeout(() => {
       setIsSpinning(false);
     }, 3800);
-  }, [onSpin, filters, lockedDishes]);
+  }, [onSpin, filters, lockedDishes, isSpinning]);
 
   const handleToggleLock = (category: SlotCategory) => {
     const dish = currentDishes[category];
@@ -336,71 +343,75 @@ export function SlotMachine({
       )}
 
       {/* Slot Machine Frame */}
-      <div className="relative">
-        {/* Outer gold frame */}
-        <div className="absolute -inset-3 bg-gradient-to-b from-yellow-500 via-yellow-600 to-yellow-700 rounded-2xl" />
-        <div className="absolute -inset-2 bg-gradient-to-b from-yellow-600 via-yellow-700 to-yellow-800 rounded-xl" />
-        
-        {/* Inner machine */}
-        <div className="relative bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 rounded-lg p-4 sm:p-6 border-4 border-yellow-600">
-          {/* Top banner */}
-          <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 via-red-500 to-red-600 px-6 sm:px-10 py-2 rounded-lg shadow-lg">
-            <span className="font-bold text-white text-sm sm:text-lg tracking-widest drop-shadow-lg">🎰 MEAL SLOT 🎰</span>
-          </div>
+      <div className="relative flex items-center justify-center">
+        {/* Main Slot Machine */}
+        <div className="relative w-full max-w-4xl">
+          {/* Outer gold frame */}
+          <div className="absolute -inset-3 bg-gradient-to-b from-yellow-500 via-yellow-600 to-yellow-700 rounded-2xl" />
+          <div className="absolute -inset-2 bg-gradient-to-b from-yellow-600 via-yellow-700 to-yellow-800 rounded-xl" />
+          
+          {/* Inner machine */}
+          <div className="relative bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 rounded-lg p-4 sm:p-6 border-4 border-yellow-600">
+            {/* Top banner */}
+            <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 via-red-500 to-red-600 px-6 sm:px-10 py-2 rounded-lg shadow-lg">
+              <span className="font-bold text-white text-sm sm:text-lg tracking-widest drop-shadow-lg">🎰 MEAL SLOT 🎰</span>
+            </div>
 
-          {/* Reels container - HORIZONTAL ROW */}
-          <div className="flex gap-2 sm:gap-3 pt-6 pb-4 justify-center">
-            {categories.map((category, index) => (
-              <SlotReel
-                key={category}
-                category={category}
-                dish={currentDishes[category] || null}
-                isSpinning={isSpinning}
-                isLocked={!!lockedDishes[category]}
-                onToggleLock={() => handleToggleLock(category)}
-                stopDelay={1500 + index * 400}
-                error={errors[category]}
-                reelIndex={index}
-              />
-            ))}
-          </div>
+            {/* Reels container - HORIZONTAL ROW */}
+            <div className="flex gap-2 sm:gap-3 pt-6 pb-4 justify-center">
+              {categories.map((category, index) => (
+                <SlotReel
+                  key={category}
+                  category={category}
+                  dish={currentDishes[category] || null}
+                  isSpinning={isSpinning}
+                  isLocked={!!lockedDishes[category]}
+                  onToggleLock={() => handleToggleLock(category)}
+                  stopDelay={1500 + index * 400}
+                  error={errors[category]}
+                  reelIndex={index}
+                />
+              ))}
+            </div>
 
-          {/* Spin Button */}
-          <div className="flex justify-center pt-4 border-t border-slate-700">
-            <button
-              onClick={handleSpin}
-              disabled={isSpinning}
-              className={cn(
-                'relative group transition-all duration-200',
-                isSpinning ? 'cursor-not-allowed scale-95' : 'hover:scale-105 active:scale-95'
-              )}
-            >
-              {/* Button glow */}
-              <div className={cn(
-                'absolute -inset-3 rounded-full blur-xl transition-opacity duration-300',
-                isSpinning ? 'bg-yellow-500/30' : 'bg-red-500/40 group-hover:bg-red-500/60'
-              )} />
-              
-              {/* Button */}
-              <div className={cn(
-                'relative w-20 h-20 sm:w-28 sm:h-28 rounded-full',
-                'flex items-center justify-center',
-                'border-4 shadow-xl',
-                isSpinning 
-                  ? 'bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600 border-yellow-300 shadow-yellow-500/50' 
-                  : 'bg-gradient-to-b from-red-500 via-red-600 to-red-700 border-red-400 shadow-red-500/50'
-              )}>
-                <div className="text-center">
-                  <Dices className={cn(
-                    'w-6 h-6 sm:w-10 sm:h-10 mx-auto text-white drop-shadow-lg',
-                    isSpinning && 'animate-spin'
-                  )} />
-                  <span className="text-[10px] sm:text-sm font-bold text-white uppercase tracking-wider drop-shadow">
-                    {isSpinning ? 'Spinning...' : 'SPIN!'}
-                  </span>
+            {/* Spin Button */}
+            <div className="flex justify-center pt-4 border-t border-slate-700">
+              <button
+                onClick={handleSpin}
+                disabled={isSpinning}
+                className={cn(
+                  'relative group transition-all duration-200',
+                  isSpinning ? 'cursor-not-allowed scale-95' : 'hover:scale-105 active:scale-95'
+                )}
+              >
+                {/* Button glow */}
+                <div className={cn(
+                  'absolute -inset-3 rounded-full blur-xl transition-opacity duration-300',
+                  isSpinning ? 'bg-yellow-500/30' : 'bg-red-500/40 group-hover:bg-red-500/60'
+                )} />
+                
+                {/* Button - larger touch target on mobile */}
+                <div className={cn(
+                  'relative w-24 h-24 sm:w-28 sm:h-28 rounded-full',
+                  'flex items-center justify-center',
+                  'border-4 shadow-xl',
+                  'touch-manipulation',
+                  isSpinning 
+                    ? 'bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600 border-yellow-300 shadow-yellow-500/50' 
+                    : 'bg-gradient-to-b from-red-500 via-red-600 to-red-700 border-red-400 shadow-red-500/50'
+                )}>
+                  <div className="text-center">
+                    <Dices className={cn(
+                      'w-8 h-8 sm:w-10 sm:h-10 mx-auto text-white drop-shadow-lg',
+                      isSpinning && 'animate-spin'
+                    )} />
+                    <span className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider drop-shadow">
+                      {isSpinning ? 'Spinning...' : 'SPIN!'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -502,6 +513,13 @@ export function SlotMachine({
           100% {
             transform: translateY(-320px);
           }
+        }
+        
+        /* Optimize for mobile touch */
+        .touch-manipulation {
+          touch-action: manipulation;
+          -webkit-user-select: none;
+          user-select: none;
         }
       `}</style>
     </div>

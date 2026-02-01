@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DishCard } from '@/components/dish-card';
 import { FilterBar } from '@/components/filter-bar';
 import { Select } from '@/components/ui/select';
+import { RecipeModal } from '@/components/recipe-modal';
 import type { FilterOptions, SlotCategory, DishWithRelations } from '@/lib/types';
 import { SLOT_CATEGORY_LABELS, SLOT_CATEGORIES } from '@/lib/types';
 import {
@@ -76,6 +77,8 @@ export default function PlansPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [selectedDish, setSelectedDish] = useState<DishWithRelations | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -401,7 +404,16 @@ export default function PlansPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                           {SLOT_CATEGORIES.map((cat) =>
                             day.dishes[cat] ? (
-                              <DishCard key={cat} dish={day.dishes[cat]} compact />
+                              <button
+                                key={cat}
+                                onClick={() => {
+                                  setSelectedDish(day.dishes[cat]);
+                                  setIsModalOpen(true);
+                                }}
+                                className="text-left"
+                              >
+                                <DishCard dish={day.dishes[cat]} compact />
+                              </button>
                             ) : null
                           )}
                         </div>
@@ -412,7 +424,16 @@ export default function PlansPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {generatedPlan.days[0] &&
                       Object.values(generatedPlan.days[0].dishes).map((dish) => (
-                        <DishCard key={dish.id} dish={dish} />
+                        <button
+                          key={dish.id}
+                          onClick={() => {
+                            setSelectedDish(dish);
+                            setIsModalOpen(true);
+                          }}
+                          className="text-left"
+                        >
+                          <DishCard dish={dish} />
+                        </button>
                       ))}
                   </div>
                 )}
@@ -461,7 +482,16 @@ export default function PlansPage() {
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                               {dayItems.map((item) => (
-                                <DishCard key={item.dish.id} dish={item.dish} compact />
+                                <button
+                                  key={item.dish.id}
+                                  onClick={() => {
+                                    setSelectedDish(item.dish);
+                                    setIsModalOpen(true);
+                                  }}
+                                  className="text-left"
+                                >
+                                  <DishCard dish={item.dish} compact />
+                                </button>
                               ))}
                             </div>
                           </div>
@@ -471,7 +501,16 @@ export default function PlansPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {selectedPlan.items.map((item) => (
-                        <DishCard key={item.dish.id} dish={item.dish} />
+                        <button
+                          key={item.dish.id}
+                          onClick={() => {
+                            setSelectedDish(item.dish);
+                            setIsModalOpen(true);
+                          }}
+                          className="text-left"
+                        >
+                          <DishCard dish={item.dish} />
+                        </button>
                       ))}
                     </div>
                   )}
@@ -523,6 +562,16 @@ export default function PlansPage() {
             )}
           </div>
         )}
+
+        {/* Recipe Modal */}
+        <RecipeModal
+          dish={selectedDish}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedDish(null);
+          }}
+        />
       </div>
     </div>
   );

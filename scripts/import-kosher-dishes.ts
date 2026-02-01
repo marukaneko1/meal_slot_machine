@@ -7,12 +7,21 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Importing kosher dishes...\n');
 
-  const csvPath = path.join(__dirname, '../samples/kosher_dishes.csv');
+  // Accept CSV path as command-line argument, or use default
+  const csvPathArg = process.argv[2];
+  const csvPath = csvPathArg 
+    ? path.isAbsolute(csvPathArg) 
+      ? csvPathArg 
+      : path.join(__dirname, '..', csvPathArg)
+    : path.join(__dirname, '../samples/kosher_dishes.csv');
   
   if (!fs.existsSync(csvPath)) {
-    console.error('Kosher dishes CSV not found at', csvPath);
+    console.error('CSV file not found at', csvPath);
+    console.error('Usage: tsx scripts/import-kosher-dishes.ts [path/to/file.csv]');
     process.exit(1);
   }
+
+  console.log(`📄 Reading CSV from: ${csvPath}\n`);
 
   const csvContent = fs.readFileSync(csvPath, 'utf-8');
   const lines = csvContent.split('\n').filter(line => line.trim());
@@ -141,7 +150,7 @@ async function main() {
       const servings = parseInt(values[servingsIdx]) || null;
       const cuisine = values[cuisineIdx] || null;
       const notes = values[notesIdx]?.replace(/"/g, '') || null;
-      const sourceUrl = values[sourceUrlIdx] || null;
+      const sourceUrl = values[sourceUrlIdx]?.replace(/"/g, '') || null;
 
       // Create dish with relations
       await prisma.dish.create({

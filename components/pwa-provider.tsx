@@ -13,14 +13,25 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
+    // Check if running as installed PWA
+    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
+
     // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
           console.log('[PWA] Service worker registered');
+
+          // Check for updates periodically
+          setInterval(() => {
+            registration.update();
+          }, 60 * 60 * 1000); // Check every hour
 
           // Check for updates
           registration.addEventListener('updatefound', () => {
@@ -58,11 +69,21 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
       // Show install banner if not already installed and not dismissed recently
       const dismissed = localStorage.getItem('pwa-install-dismissed');
       if (!dismissed || Date.now() - parseInt(dismissed) > 7 * 24 * 60 * 60 * 1000) {
-        setShowInstallBanner(true);
+        // Delay showing the banner for better UX
+        setTimeout(() => {
+          setShowInstallBanner(true);
+        }, 3000);
       }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Handle app installed event
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] App installed');
+      setInstallPrompt(null);
+      setShowInstallBanner(false);
+    });
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -71,6 +92,11 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
 
   const handleInstall = async () => {
     if (!installPrompt) return;
+
+    // Haptic feedback
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
 
     await installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
@@ -99,29 +125,29 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
     <>
       {children}
 
-      {/* Install Banner */}
-      {showInstallBanner && (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-gradient-to-r from-slate-900 to-slate-800 border border-slot-gold/50 rounded-2xl p-4 shadow-2xl z-50 animate-bounce-in">
+      {/* Install Banner - positioned above bottom nav on mobile */}
+      {showInstallBanner && !isStandalone && (
+        <div className="fixed bottom-20 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-gradient-to-r from-slate-900 to-slate-800 border border-slot-gold/50 rounded-2xl p-4 shadow-2xl z-40 animate-slide-up">
           <button
             onClick={dismissInstallBanner}
-            className="absolute top-2 right-2 p-1 text-gray-500 hover:text-white transition-colors"
+            className="absolute top-3 right-3 p-2 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
             aria-label="Dismiss"
           >
             <X className="w-4 h-4" />
           </button>
           
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slot-gold to-yellow-600 flex items-center justify-center flex-shrink-0">
-              <Download className="w-6 h-6 text-black" />
+          <div className="flex items-start gap-4 pr-8">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slot-gold to-yellow-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+              <Download className="w-7 h-7 text-black" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-white">Install Meal Slot</h3>
+              <h3 className="font-bold text-white text-lg">Install Meal Slot</h3>
               <p className="text-sm text-gray-400 mt-1">
                 Add to your home screen for quick access and offline use
               </p>
               <button
                 onClick={handleInstall}
-                className="mt-3 w-full px-4 py-2 bg-slot-gold text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors"
+                className="mt-4 w-full px-4 py-3 bg-slot-gold text-black font-bold rounded-xl hover:bg-yellow-400 transition-all active:scale-95"
               >
                 Install App
               </button>
@@ -130,21 +156,21 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Update Banner */}
+      {/* Update Banner - positioned above bottom nav on mobile */}
       {showUpdateBanner && (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-gradient-to-r from-blue-900 to-blue-800 border border-blue-500/50 rounded-2xl p-4 shadow-2xl z-50 animate-bounce-in">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0">
-              <RefreshCw className="w-6 h-6 text-white" />
+        <div className="fixed bottom-20 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-gradient-to-r from-blue-900 to-blue-800 border border-blue-500/50 rounded-2xl p-4 shadow-2xl z-40 animate-slide-up">
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+              <RefreshCw className="w-7 h-7 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-white">Update Available</h3>
+              <h3 className="font-bold text-white text-lg">Update Available</h3>
               <p className="text-sm text-blue-200 mt-1">
                 A new version of Meal Slot is ready
               </p>
               <button
                 onClick={handleUpdate}
-                className="mt-3 w-full px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-400 transition-colors"
+                className="mt-4 w-full px-4 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-400 transition-all active:scale-95"
               >
                 Update Now
               </button>

@@ -1,0 +1,91 @@
+name,slot_category,ingredients,kosher,kosher_style,difficulty,main_protein,prep_time_minutes,cook_time_minutes,servings,cuisine,tags,contains_allergens,notes,source_url
+Chicken And Ramen Noodles,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/chicken-and-ramen-noodles/
+Easy Chicken Pot Pie,muffin,,true,meat,medium,chicken,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/easy-chicken-pot-pie-13683/
+Ground Beef And Broccoli,main_beef,,true,meat,medium,beef,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/ground-beef-and-broccoli/
+Celery Carrot Barley Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/celery-carrot-barley-soup-9978/
+Sticky Chicken Stir Fry With Sweet Potato,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/sticky-chicken-stir-fry-with-sweet-potato-16254/
+Easy Shortcut Mongolian Beef And Noodles,main_beef,,true,meat,medium,beef,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/easy-shortcut-mongolian-beef-and-noodles/
+Grandmothers Hamburger Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/grandmothers-hamburger-soup/
+Crispy Vegetarian Tacos,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/crispy-vegetarian-tacos/
+Restaurant Pasta Made Easy,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/restaurant-pasta-made-easy/
+One Pot Tofu Lo Mein,main_chicken,,true,pareve,medium,tofu,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/one-pot-tofu-lo-mein/
+Creamy Tomato And Spinach Orzotto,side_starch,,true,dairy,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/creamy-tomato-and-spinach-orzotto/
+Easy Herby Chicken And Rice,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/easy-herby-chicken-and-rice/
+Pareve Bean And Vegetable Stew,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/pareve-bean-and-vegetable-stew/
+Greek Eggplant Gnocchi,side_veg,,true,pareve,medium,,,,4,Jewish,"kosher, side veg",,Recipe from kosher.com,https://www.kosher.com/recipe/greek-eggplant-gnocchi/
+California Cobb Salad With Honey Mustard Dressing,side_veg,,true,pareve,medium,,,,4,Jewish,"kosher, side veg",,Recipe from kosher.com,https://www.kosher.com/recipe/california-cobb-salad-with-honey-mustard-dressing-10852/
+Cabbage Pastrami Crunch Salad Recipe,side_veg,,true,pareve,medium,,,,4,Jewish,"kosher, side veg",,Recipe from kosher.com,https://www.kosher.com/recipe/cabbage-pastrami-crunch-salad-recipe-2274/
+Chicken Charred Pepper Roll,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/chicken-charred-pepper-roll/
+Lazy Mans Cholent,main_beef,,true,pareve,medium,,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/lazy-mans-cholent-5958/
+Quick And Easy Mushroom Quiche,main_chicken,,true,dairy,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/quick-and-easy-mushroom-quiche-7149/
+Aromatic Chicken In Wine Sauce,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/aromatic-chicken-in-wine-sauce/
+Rice Pilaf With Melted Leeks,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/rice-pilaf-with-melted-leeks-15503/
+Irresistible Chocolate Pecan Bars,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/irresistible-chocolate-pecan-bars-1417/
+Fruity Cake With Crumbly Topping Recipe,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/fruity-cake-with-crumbly-topping-recipe-3968/
+Amaretto Hot Chocolate,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/amaretto-hot-chocolate-16263/
+Warm Cinnamon Milk,main_chicken,,true,dairy,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/warm-cinnamon-milk-16120/
+Brown Sugar Masala Chai Latte,main_chicken,,true,dairy,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/brown-sugar-masala-chai-latte/
+Fiery Chocolate Chai Cocktail,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/fiery-chocolate-chai-cocktail-10418/
+Turmeric Latte,main_chicken,,true,dairy,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/turmeric-latte-10286/
+Tahini Hot Chocolate,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/tahini-hot-chocolate-13675/
+Hazelnut Mocha,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/hazelnut-mocha/
+Dark Hot Cocoa,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/dark-hot-cocoa/
+Caramelized Tahini Butter Sweet Potatoes,side_starch,,true,dairy,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/caramelized-tahini-butter-sweet-potatoes
+Chickpea Stew,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/chickpea-stew
+Super Easy Copycat Fruit Riot,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/super-easy-copycat-fruit-riot
+Steamed And Fried Lamb Dumplings,main_beef,,true,meat,medium,lamb,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/steamed-and-fried-lamb-dumplings
+Pot Roast,main_beef,,true,pareve,medium,,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/pot-roast-2
+Mocha Citrus Dream Bars,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/mocha-citrus-dream-bars
+Spicy Sweet Party Nuts,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/spicy-sweet-party-nuts
+Crowned Chocolate Cake,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/crowned-chocolate-cake
+Caramel Apple Crinkle Pie,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/caramel-apple-crinkle-pie
+Cappuccino Cupcakes,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/cappuccino-cupcakes/
+Greek Salmon Dinner,main_chicken,,true,pareve,medium,fish,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/greek-salmon-dinner-16851/
+One Pot Creamy Pasta And Meat Sauce Dairy Free,main_beef,,true,dairy,medium,,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/one-pot-creamy-pasta-and-meat-sauce-dairy-free-12750/
+Vegetarian Sausage Hash Browns And Eggs On A Sheet Pan,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/vegetarian-sausage-hash-browns-and-eggs-on-a-sheet-pan-16454/
+Family Favorite Chicken Nuggets With Sweet And Sour Dipping Sauce,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/family-favorite-chicken-nuggets-with-sweet-and-sour-dipping-sauce-11915/
+Healthier Pepper Steak,main_beef,,true,meat,medium,beef,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/healthier-pepper-steak-16006/
+Roasted Herbed Balsamic Chicken Thighs,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/roasted-herbed-balsamic-chicken-thighs
+Whole Chicken And Stuffing Slow Cooker,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/whole-chicken-and-stuffing-slow-cooker
+Beer Barbecue Meatballs Slow Cooker,main_beef,,true,pareve,medium,,,,4,Jewish,"kosher, main beef",,Recipe from kosher.com,https://www.kosher.com/recipe/beer-barbecue-meatballs-slow-cooker
+Lecso Chicken On The Bone Slow Cooker,main_chicken,,true,meat,medium,chicken,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/lecso-chicken-on-the-bone-slow-cooker
+Gluten Free Fresh Pasta With Pesto And Parmesan,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/gluten-free-fresh-pasta-with-pesto-and-parmesan
+Easy Shakshuka,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/easy-shakshuka
+Chickpea Stew,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/chickpea-stew/
+Onion Leek Tart,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/onion-leek-tart-9676/
+Cauliflower And Leek Souffle,side_veg,,true,pareve,medium,,,,4,Jewish,"kosher, side veg",,Recipe from kosher.com,https://www.kosher.com/recipe/cauliflower-and-leek-souffle-789/
+Rories Easy Ratatouille,side_veg,,true,pareve,medium,,,,4,Jewish,"kosher, side veg",,Recipe from kosher.com,https://www.kosher.com/recipe/rories-easy-ratatouille-9630/
+Garlic Dill Potatoes,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/garlic-dill-potatoes-10651/
+Cheese Krispie Kugel 2 Ways,muffin,,true,dairy,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/cheese-krispie-kugel-2-ways
+Blooming Onion,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/blooming-onion
+Gourmet Orzo Salad,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/gourmet-orzo-salad
+Fried Rice,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/fried-rice
+Baby Tomatoes On The Vine,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/baby-tomatoes-on-the-vine
+Spicy Sweet Potato Fries,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/spicy-sweet-potato-fries
+Crispy Red Potato Halves,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/crispy-red-potato-halves
+Hearts Of Palm Rice Fritters,side_starch,,true,pareve,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/hearts-of-palm-rice-fritters
+Caramelized Tahini Butter Sweet Potatoes,side_starch,,true,dairy,medium,,,,4,Jewish,"kosher, side starch",,Recipe from kosher.com,https://www.kosher.com/recipe/caramelized-tahini-butter-sweet-potatoes/
+White Velvet Garden Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/white-velvet-garden-soup-2988/
+Dairy Carrot Soup,soup,,true,dairy,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/dairy-carrot-soup-5083/
+Crockpot Onion And Flanken Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/crockpot-onion-and-flanken-soup-6392/
+Hearty Roasted Vegetable Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/hearty-roasted-vegetable-soup-2833/
+Hearty Golden Chicken Soup,soup,,true,meat,medium,chicken,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/hearty-golden-chicken-soup
+Veggie Lentil Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/veggie-lentil-soup
+Creamy Chicken Vegetable Barley Soup,soup,,true,meat,medium,chicken,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/creamy-chicken-vegetable-barley-soup
+The Best Ever Beef Split Pea Soup,soup,,true,meat,medium,beef,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/the-best-ever-beef-split-pea-soup
+Cozy Vegetable Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/cozy-vegetable-soup
+Fat Free Chicken Lemon Soup,soup,,true,meat,medium,chicken,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/fat-free-chicken-lemon-soup
+Chamud,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/chamud
+Cabbage Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/cabbage-soup-2
+Grandmothers Hamburger Soup,soup,,true,pareve,medium,,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/grandmothers-hamburger-soup
+Hearty Golden Chicken Soup,soup,,true,meat,medium,chicken,,,4,Jewish,"kosher, soup",,Recipe from kosher.com,https://www.kosher.com/recipe/hearty-golden-chicken-soup/
+Blueberry Lemon Crumbles,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/blueberry-lemon-crumbles-5558/
+Chocolate Nougat Pots De Creme,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/chocolate-nougat-pots-de-creme-16287/
+The Perfect Chocolate Chip Cookie Recipe,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/the-perfect-chocolate-chip-cookie-recipe-4133/
+Best Honey Cake Mix Hack,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/best-honey-cake-mix-hack-11494/
+Pistachio Mango Tart,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/pistachio-mango-tart
+Delicious Chocolate Breakfast Cookies,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/delicious-chocolate-breakfast-cookies
+Chewy Oatmeal Breakfast Cookies,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/chewy-oatmeal-breakfast-cookies
+Lemon Blueberry Buns,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/lemon-blueberry-buns
+Babka Knots With Coffee Glaze,main_chicken,,true,pareve,medium,,,,4,Jewish,"kosher, main chicken",,Recipe from kosher.com,https://www.kosher.com/recipe/babka-knots-with-coffee-glaze
+Sticky Toffee Pudding Loaf With Caramel Sauce,muffin,,true,pareve,medium,,,,4,Jewish,"kosher, muffin",,Recipe from kosher.com,https://www.kosher.com/recipe/sticky-toffee-pudding-loaf-with-caramel-sauce

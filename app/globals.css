@@ -8,34 +8,112 @@
   --font-display: 'Outfit', system-ui, sans-serif;
   --font-body: 'Outfit', system-ui, sans-serif;
   --font-mono: 'Space Mono', monospace;
+  
+  /* Safe area variables */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
 }
 
 html {
   font-family: var(--font-body);
   scroll-behavior: smooth;
+  /* Prevent pull-to-refresh on mobile */
+  overscroll-behavior-y: contain;
+  /* Prevent text size adjustment on orientation change */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   @apply bg-black text-white min-h-screen;
   background-color: #000000;
+  /* Prevent iOS bounce scroll */
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Allow scrolling in main content */
+main {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+}
+
+/* Safe area utilities */
+.safe-area-inset {
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-black;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slot-gold/50 rounded-full;
+  @apply bg-slot-gold/30 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slot-gold;
+  @apply bg-slot-gold/50;
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+/* Touch action improvements for mobile */
+@media (pointer: coarse) {
+  /* Larger tap targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent text selection on tap */
+  button, a {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Improve touch responsiveness */
+  * {
+    touch-action: manipulation;
+  }
+}
+
+/* Active states for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary:active,
+  .btn-secondary:active,
+  .btn-gold:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
 }
 
 /* Slot machine reels */
@@ -122,42 +200,48 @@ body {
     0 0 20px rgba(139, 92, 246, 0.2);
 }
 
-/* Button styles */
+/* Button styles - touch optimized */
 .btn-primary {
-  @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300;
+  @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200;
   @apply bg-slot-gold text-black;
   @apply hover:bg-yellow-400;
-  @apply active:scale-95;
+  @apply active:scale-95 active:opacity-90;
   @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  min-height: 48px;
 }
 
 .btn-secondary {
-  @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300;
+  @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200;
   @apply bg-black/50 border border-slot-gold/30 text-slot-gold;
   @apply hover:bg-slot-gold/10 hover:border-slot-gold;
-  @apply active:scale-95;
+  @apply active:scale-95 active:opacity-90;
+  min-height: 48px;
 }
 
 .btn-gold {
-  @apply px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300;
+  @apply px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200;
   @apply bg-gradient-to-r from-yellow-500 via-slot-gold to-yellow-500;
   @apply text-slot-bg;
   @apply hover:from-yellow-400 hover:via-yellow-300 hover:to-yellow-400;
   @apply active:scale-95;
   @apply shadow-lg;
+  min-height: 56px;
 }
 
 .btn-gold:hover {
   @apply glow-gold;
 }
 
-/* Form inputs */
+/* Form inputs - mobile optimized */
 .input-field {
   @apply w-full px-4 py-3 rounded-lg;
   @apply bg-black/50 border border-slot-gold/30;
   @apply text-white placeholder-gray-500;
   @apply focus:outline-none focus:border-slot-gold focus:ring-2 focus:ring-slot-gold/20;
   @apply transition-all duration-200;
+  min-height: 48px;
+  /* Prevent zoom on iOS */
+  font-size: 16px;
 }
 
 .input-field:disabled {
@@ -166,7 +250,7 @@ body {
 
 /* Checkbox & Toggle */
 .toggle {
-  @apply relative inline-flex h-6 w-11 items-center rounded-full;
+  @apply relative inline-flex h-7 w-12 items-center rounded-full;
   @apply bg-gray-700 transition-colors duration-200;
 }
 
@@ -175,7 +259,7 @@ body {
 }
 
 .toggle-thumb {
-  @apply inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200;
+  @apply inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200;
 }
 
 .toggle[data-state="checked"] .toggle-thumb {
@@ -188,9 +272,10 @@ body {
 
 /* Badge/chip styles */
 .chip {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  @apply inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium;
   @apply bg-gray-800 text-gray-300 border border-gray-700;
   @apply transition-all duration-200;
+  min-height: 36px;
 }
 
 .chip-selected {
@@ -229,6 +314,7 @@ body {
 /* Table styles */
 .table-container {
   @apply overflow-x-auto rounded-xl border border-slot-accent;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-container table {
@@ -255,11 +341,44 @@ body {
 .delay-500 { animation-delay: 500ms; }
 .delay-600 { animation-delay: 600ms; }
 
+/* Slide animations for mobile */
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-in-from-bottom 0.3s ease-out forwards;
+}
+
+.animate-slide-down {
+  animation: slide-in-from-top 0.3s ease-out forwards;
+}
+
 /* Print styles */
 @media print {
   body {
     @apply bg-white text-black;
     background-image: none;
+    position: static;
+    overflow: visible;
   }
 
   .no-print {
@@ -269,8 +388,42 @@ body {
   .print-only {
     display: block !important;
   }
+  
+  main {
+    overflow: visible;
+    height: auto;
+  }
 }
 
 .print-only {
   display: none;
+}
+
+/* iOS rubber band effect prevention */
+@supports (-webkit-touch-callout: none) {
+  .no-bounce {
+    overscroll-behavior: none;
+  }
+}
+
+/* Prevent highlighting on tap */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid #FFD700;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

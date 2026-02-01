@@ -9,8 +9,6 @@ import {
   BookOpen,
   Upload,
   Users,
-  Menu,
-  X,
   ShoppingCart,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -30,7 +28,6 @@ const adminLinks = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [shoppingCount, setShoppingCount] = useState(0);
 
   // Load shopping list count and listen for updates
@@ -45,7 +42,7 @@ export function Navigation() {
   }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-slot-gold/30">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-slot-gold/30 safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
@@ -58,7 +55,7 @@ export function Navigation() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Hidden on mobile (we use bottom nav) */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -109,79 +106,11 @@ export function Navigation() {
             })}
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-slot-gold/10 text-gray-400 hover:text-slot-gold transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-slot-gold/30">
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = pathname === link.href;
-                const isShopping = link.href === '/shopping';
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'relative flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-slot-gold text-black'
-                        : 'text-gray-400 hover:text-slot-gold hover:bg-slot-gold/10'
-                    )}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {link.label}
-                    {isShopping && shoppingCount > 0 && (
-                      <span className="ml-auto w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
-                        {shoppingCount > 9 ? '9+' : shoppingCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-
-              <div className="h-px bg-slot-gold/30 my-2" />
-
-              <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Admin
-              </p>
-
-              {adminLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-slot-gold/20 text-slot-gold border border-slot-gold/50'
-                        : 'text-gray-500 hover:text-slot-gold hover:bg-slot-gold/10'
-                    )}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </div>
+          {/* Mobile: Show current page title */}
+          <div className="md:hidden flex items-center">
+            {/* Optional: Show page-specific actions here */}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );

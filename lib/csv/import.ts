@@ -64,7 +64,7 @@ async function getOrCreateAllergen(name: string): Promise<string> {
 /**
  * Imports a single dish into the database
  */
-async function importDish(
+export async function importDish(
   data: NormalizedDishData,
   updateExisting: boolean
 ): Promise<{ action: 'created' | 'updated' | 'skipped' }> {
