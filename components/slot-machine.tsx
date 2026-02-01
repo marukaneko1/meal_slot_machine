@@ -245,9 +245,12 @@ export function SlotMachine({
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedDish, setSelectedDish] = useState<DishWithRelations | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const spinningRef = useRef(false);
 
   const handleSpin = useCallback(async () => {
-    if (isSpinning) return;
+    // Double-check with ref to prevent race conditions
+    if (isSpinning || spinningRef.current) return;
+    spinningRef.current = true;
     
     // Haptic feedback for mobile
     if ('vibrate' in navigator) {
@@ -288,6 +291,7 @@ export function SlotMachine({
     // The longest reel stops at 1500 + (5 * 400) = 3500ms
     setTimeout(() => {
       setIsSpinning(false);
+      spinningRef.current = false;
     }, 3800);
   }, [onSpin, filters, lockedDishes, isSpinning]);
 
@@ -377,7 +381,14 @@ export function SlotMachine({
             {/* Spin Button */}
             <div className="flex justify-center pt-4 border-t border-slate-700">
               <button
-                onClick={handleSpin}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSpin();
+                }}
+                onTouchEnd={(e) => {
+                  // Prevent ghost click on mobile
+                  e.preventDefault();
+                }}
                 disabled={isSpinning}
                 className={cn(
                   'relative group transition-all duration-200',
