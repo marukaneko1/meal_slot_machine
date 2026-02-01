@@ -1,213 +1,259 @@
-# 🎰 Meal Slot
+# Meal Slot
 
-A production-ready web application for generating meal plans using a slot-machine-inspired interface. Built with Next.js, Prisma, and TailwindCSS.
+A production-ready web application for generating meal plans. Built with Next.js, Prisma, and a custom design system.
 
-![Meal Slot](https://via.placeholder.com/800x400?text=Meal+Slot+Screenshot)
+## Features
 
-## ✨ Features
+- **Daily & Weekly Plans** — Generate meal plans for one day or a full week
+- **Lock & Re-spin** — Keep dishes you like while regenerating the rest
+- **Smart Filtering** — Filter by kosher, allergens, ingredients, difficulty, cuisine
+- **CSV Import** — Upload and manage your dish database via CSV
+- **Customer Profiles** — Create templates like "2 mains, 2 sides, 1 soup, 1 muffin"
+- **Shopping List** — Add ingredients to a shopping list from any recipe
+- **Dish Library** — Browse, search, and filter your complete dish collection
 
-- **🎰 Slot Machine Spin** - Fun animated interface to randomly select dishes for each meal category
-- **📅 Daily & Weekly Plans** - Generate single-day or full 7-day meal plans
-- **🔒 Lock & Re-spin** - Keep dishes you like while re-spinning the rest
-- **🥗 Smart Filtering** - Filter by kosher, allergens, ingredients, difficulty, cuisine, and more
-- **📤 CSV Import** - Upload and manage your dish database via CSV files
-- **👤 Customer Profiles** - Create templates like "2 mains, 2 sides, 1 soup, 1 muffin"
-- **🔄 Reproducible Plans** - Seeded random generation for reproducible results
-- **📊 Dish Library** - Browse, search, and filter your complete dish collection
-- **🖨️ Export & Print** - Export plans to CSV or print-friendly format
+---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- npm
 
 ### Installation
 
-1. **Clone and install dependencies:**
    ```bash
-   cd dish_slot_machine
+# Install dependencies
    npm install
-   ```
 
-2. **Set up environment:**
-   ```bash
-   # Copy the template and edit as needed
+# Set up environment
    cp env.template .env
-   ```
 
-3. **Initialize the database:**
-   ```bash
-   # Generate Prisma client
+# Initialize database
    npm run db:generate
-
-   # Push schema to database (creates SQLite file)
    npm run db:push
+npm run db:seed  # Optional: seed with sample data
 
-   # Optional: Seed with sample data
-   npm run db:seed
-   ```
-
-4. **Start the development server:**
-   ```bash
+# Start dev server
    npm run dev
    ```
 
-5. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000)
 
-## 🚢 Deployment (Vercel)
+---
 
-**⚠️ Important:** SQLite does NOT work on Vercel. You must use PostgreSQL.
+## Design System
 
-See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for detailed setup instructions.
+This project uses a custom design system built on Tailwind CSS with CSS custom properties. All UI components and pages follow these standards.
 
-**Quick steps:**
-1. Create a Vercel Postgres database (or use Supabase/Neon)
-2. Update `prisma/schema.prisma` to use `provider = "postgresql"`
-3. Set `DATABASE_URL` environment variable in Vercel
-4. Run migrations: `npx prisma migrate deploy`
-5. Deploy!
+### Design Principles
 
-## 📁 Project Structure
+1. **Warm, editorial aesthetic** — Modern cookbook meets culinary magazine
+2. **Consistent spacing** — Use the defined spacing scale only
+3. **Restrained color** — Warm neutrals with amber accent
+4. **Subtle motion** — 150-200ms transitions, no bouncy animations
+5. **Left-aligned hierarchy** — Editorial layouts, not center-everything
+
+### File Structure
 
 ```
-dish_slot_machine/
-├── app/                    # Next.js App Router pages
-│   ├── (public)/          # Public routes
-│   ├── admin/             # Admin routes (upload, profiles)
-│   ├── api/               # API routes
-│   ├── library/           # Dish library page
-│   ├── plans/             # Plans generation & viewing
-│   └── spin/              # Slot machine page
-├── components/            # React components
-│   ├── ui/               # Base UI components
-│   ├── dish-card.tsx     # Dish display card
-│   ├── filter-bar.tsx    # Filter controls
-│   ├── navigation.tsx    # Main navigation
-│   └── slot-machine.tsx  # Slot machine component
-├── lib/                   # Shared libraries
-│   ├── auth/             # Admin authentication
-│   ├── csv/              # CSV parsing & import
-│   ├── db/               # Database queries
-│   ├── plan/             # Plan generation logic
-│   ├── types/            # TypeScript types
-│   └── utils/            # Utility functions
-├── prisma/               # Prisma schema & migrations
-│   ├── schema.prisma     # Database schema
-│   └── seed.ts           # Seed script
-└── samples/              # Sample data
-    └── sample_dishes.csv # Sample dish CSV
+styles/
+  design-tokens.css    # All design tokens (colors, spacing, typography, etc.)
+
+app/
+  globals.css          # Tailwind imports + component classes
+
+components/ui/
+  button.tsx           # Button component
+  card.tsx             # Card component
+  chip.tsx             # Chip/tag component
+  input.tsx            # Input component
+  select.tsx           # Select component
+  toggle.tsx           # Toggle/switch component
 ```
 
-## 📊 CSV Import Format
+### Color Tokens
 
-### Required Columns
-- `name` - Dish name (string)
-- `slot_category` - One of: `main_chicken`, `main_beef`, `side_veg`, `side_starch`, `soup`, `muffin`
+| Token | Usage |
+|-------|-------|
+| `--color-bg` | Page background |
+| `--color-surface` | Card backgrounds |
+| `--color-surface-2` | Elevated elements |
+| `--color-surface-3` | Hover states |
+| `--color-border` | Primary borders |
+| `--color-border-subtle` | Subtle borders |
+| `--color-text` | Primary text |
+| `--color-text-secondary` | Secondary text |
+| `--color-text-muted` | Muted text |
+| `--color-accent` | Primary accent (amber) |
+| `--color-success` | Success states |
+| `--color-error` | Error states |
+| `--color-warning` | Warning states |
 
-### Optional Columns
-| Column | Type | Description |
-|--------|------|-------------|
-| `ingredients` | comma-separated | List of ingredients |
-| `kosher` | true/false/yes/no/1/0 | Is the dish kosher? |
-| `kosher_style` | meat/dairy/pareve/unknown | Kosher classification |
-| `difficulty` | easy/medium/hard/unknown | Difficulty level |
-| `main_protein` | string | Primary protein (chicken, beef, fish, tofu, none) |
-| `prep_time_minutes` | number | Preparation time |
-| `cook_time_minutes` | number | Cooking time |
-| `servings` | number | Number of servings |
-| `cuisine` | string | Cuisine type (Italian, Asian, etc.) |
-| `tags` | comma-separated | Tags (kid-friendly, quick, etc.) |
-| `contains_allergens` | comma-separated | Allergens (dairy, eggs, nuts, gluten) |
-| `notes` | string | Additional notes |
-| `source_url` | string | Recipe URL |
+### Spacing Scale
 
-### Example CSV
-```csv
-name,slot_category,ingredients,kosher,kosher_style,difficulty,main_protein,prep_time_minutes,cook_time_minutes,servings,cuisine,tags,contains_allergens,notes
-Lemon Herb Chicken,main_chicken,"chicken, lemon, garlic, rosemary",true,meat,easy,chicken,15,45,4,Mediterranean,weeknight dinner,,Classic roasted chicken
+Use only these values for margins, padding, and gaps:
+
+```
+--space-1: 0.25rem   (4px)
+--space-2: 0.5rem    (8px)
+--space-3: 0.75rem   (12px)
+--space-4: 1rem      (16px)
+--space-5: 1.25rem   (20px)
+--space-6: 1.5rem    (24px)
+--space-8: 2rem      (32px)
+--space-10: 2.5rem   (40px)
+--space-12: 3rem     (48px)
+--space-16: 4rem     (64px)
 ```
 
-### Header Variations
-The importer accepts various header formats:
-- `slot_category` or `slotCategory`
-- `prep_time_minutes` or `prepTimeMinutes`
-- `kosher_style` or `kosherStyle`
-- `source_url` or `sourceUrl`
+### Typography
 
-## 🧠 How It Works
+**Font Families:**
+- Display: Playfair Display (serif) — headings
+- Body: DM Sans (sans-serif) — body text
 
-### Ingredient Normalization
-Ingredients are normalized and stored in a separate table:
-1. Split by commas
-2. Trim whitespace
-3. Convert to lowercase
-4. Collapse multiple spaces
-5. Store in `Ingredient` table with join table `DishIngredient`
+**Heading Classes:**
+- `.heading-1` — Page titles (36px, serif)
+- `.heading-2` — Section titles (30px, serif)
+- `.heading-3` — Card titles (24px, serif)
+- `.heading-4` — Subsection titles (18px, sans)
 
-This enables reliable include/exclude filtering on ingredients.
+**Text Classes:**
+- `.body-lg` — Large body text
+- `.body-base` — Standard body text
+- `.body-sm` — Small body text
+- `.caption` — Captions and labels
+- `.label` — Form labels
 
-### Seeded Random Generation
-Plans can be reproduced using seed strings:
+### Component Classes
 
-```typescript
-// The seed is converted to a number using a hash function
-const seed = "my-seed-123";
-const rng = createSeededRNG(seed);
-
-// Same seed = same results every time
-const dish1 = pickRandom(candidates, rng);
+**Buttons:**
+```html
+<button class="btn-primary">Primary</button>
+<button class="btn-secondary">Secondary</button>
+<button class="btn-ghost">Ghost</button>
+<button class="btn-accent">Accent</button>
+<button class="btn-sm">Small</button>
+<button class="btn-lg">Large</button>
 ```
 
-The algorithm uses Mulberry32, a simple seeded PRNG that produces consistent results across runs.
-
-### Plan Generation Logic
-1. Get candidate dishes for each category
-2. Apply all filters (kosher, allergens, ingredients, etc.)
-3. For weekly mode, optionally track used dishes to avoid repeats
-4. Shuffle candidates with seeded RNG
-5. Pick first candidate for each slot
-6. Handle conflicts gracefully with warnings
-
-## 🗃️ Database
-
-### Switching to PostgreSQL
-
-1. Update `prisma/schema.prisma`:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
-   ```
-
-2. Update `.env`:
-   ```
-   DATABASE_URL="postgresql://user:password@localhost:5432/mealslot?schema=public"
-   ```
-
-3. Run migrations:
-   ```bash
-   npm run db:migrate
-   ```
-
-### Database Studio
-View and edit data directly:
-```bash
-npm run db:studio
+**Inputs:**
+```html
+<input class="input" />
+<label class="input-label">Label</label>
+<p class="input-hint">Hint text</p>
+<p class="input-error-text">Error message</p>
 ```
 
-## 🔐 Admin Access
+**Cards:**
+```html
+<div class="card">Static card</div>
+<div class="card-interactive">Clickable card</div>
+```
 
-**Admin routes are publicly accessible** - no authentication required.
+**Chips:**
+```html
+<span class="chip">Default chip</span>
+<button class="chip-interactive">Clickable chip</button>
+<button class="chip-interactive chip-selected">Selected</button>
+<span class="chip-protein">Protein category</span>
+<span class="chip-vegetable">Vegetable category</span>
+```
 
-The admin routes (`/admin/*`) include:
-- `/admin/upload` - Upload CSV files or manually add dishes
-- `/admin/profiles` - Manage customer profiles
+**Alerts:**
+```html
+<div class="alert-success">Success message</div>
+<div class="alert-error">Error message</div>
+<div class="alert-warning">Warning message</div>
+```
 
-## 🧪 API Endpoints
+**Layout:**
+```html
+<div class="container-page">Centered max-width container</div>
+<div class="empty-state">Empty state wrapper</div>
+```
+
+---
+
+## Future UI Rules
+
+**IMPORTANT:** Follow these rules for all future UI work to maintain design consistency.
+
+### DO
+
+1. **Use design tokens** — Always reference CSS variables for colors, spacing, typography
+2. **Use component classes** — Use `.btn-*`, `.card`, `.chip`, `.input`, etc.
+3. **Follow the spacing scale** — Only use values from the spacing scale
+4. **Use typography classes** — Use `.heading-*`, `.body-*`, `.caption`, `.label`
+5. **Left-align content** — Default to left-aligned text and layouts
+6. **Keep animations subtle** — 150-200ms durations, ease-out timing
+
+### DON'T
+
+1. **Don't use arbitrary colors** — No hex codes or rgb() in component code
+2. **Don't use arbitrary spacing** — No `p-7`, `mt-11`, etc. — stick to the scale
+3. **Don't center everything** — Avoid center-aligned layouts except for empty states
+4. **Don't add glow effects** — No box-shadow glows or text shadows
+5. **Don't use emoji in UI** — Keep the interface clean and professional
+6. **Don't use bouncy animations** — No spring physics or exaggerated transforms
+7. **Don't create one-off styles** — Add new patterns to the design system first
+
+### Adding New Patterns
+
+If you need a new UI pattern:
+
+1. Add the CSS class to `globals.css` under `@layer components`
+2. Document it in this README
+3. Create a reusable component in `components/ui/`
+
+### Category Colors
+
+For dish categories, use these chip classes:
+- `chip-protein` — Chicken, beef, and other proteins
+- `chip-vegetable` — Vegetable sides
+- `chip-starch` — Starch sides
+- `chip-soup` — Soups
+- `chip-dessert` — Muffins and desserts
+
+---
+
+## Project Structure
+
+```
+app/
+  page.tsx              # Home/Spin page
+  library/              # Dish library
+  plans/                # Plan generation & viewing
+  shopping/             # Shopping list
+  admin/
+    upload/             # CSV upload & manual entry
+    profiles/           # Customer profiles
+
+components/
+  ui/                   # Base UI components
+  slot-machine.tsx      # Main slot machine component
+  dish-card.tsx         # Dish display card
+  filter-bar.tsx        # Filter controls
+  navigation.tsx        # Desktop navigation
+  bottom-nav.tsx        # Mobile navigation
+  recipe-modal.tsx      # Recipe detail modal
+
+lib/
+  db/                   # Database queries
+  csv/                  # CSV parsing & import
+  plan/                 # Plan generation logic
+  types/                # TypeScript types
+  utils/                # Utility functions
+
+styles/
+  design-tokens.css     # Design system tokens
+```
+
+---
+
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -220,29 +266,16 @@ The admin routes (`/admin/*`) include:
 | GET | `/api/plans/[id]` | Get plan details |
 | POST | `/api/admin/upload/preview` | Preview CSV |
 | POST | `/api/admin/upload/import` | Import CSV |
+| POST | `/api/admin/dishes/create` | Create single dish |
 
-## 🎨 Customization
+---
 
-### Slot Categories
-Add new categories by:
-1. Update `SLOT_CATEGORIES` in `lib/types/index.ts`
-2. Add labels in `SLOT_CATEGORY_LABELS`
-3. Add colors in `SLOT_CATEGORY_COLORS`
-4. Add badge styles in `globals.css`
-
-### Themes
-The app uses CSS variables for theming. Edit `tailwind.config.ts` and `globals.css` to customize:
-- `--slot-gold`, `--slot-purple`, etc.
-- Font families
-- Animation timings
-
-## 📝 Scripts
+## Scripts
 
 ```bash
-npm run dev          # Start development server
+npm run dev          # Start dev server
 npm run build        # Build for production
 npm run start        # Start production server
-npm run lint         # Run ESLint
 npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema changes
 npm run db:migrate   # Run migrations
@@ -250,17 +283,16 @@ npm run db:studio    # Open Prisma Studio
 npm run db:seed      # Seed database
 ```
 
-## 🤝 Contributing
+---
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+## Deployment
 
-## 📄 License
+See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for Vercel deployment instructions.
 
-MIT License - feel free to use this project for personal or commercial purposes.
+**Note:** SQLite doesn't work on Vercel. Use PostgreSQL (Vercel Postgres, Supabase, or Neon).
 
 ---
 
-Built with ❤️ using Next.js, Prisma, and TailwindCSS
+## License
+
+MIT License

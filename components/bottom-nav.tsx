@@ -3,21 +3,24 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
-import { Dices, CalendarDays, BookOpen, ShoppingCart, Settings } from 'lucide-react';
+import { Sparkles, CalendarDays, BookOpen, ShoppingCart, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getShoppingListCount } from '@/lib/utils/shopping-list';
+import { useSparkle } from './sparkle-provider';
+import { haptic } from '@/lib/utils/haptic';
 
 const navItems = [
-  { href: '/', label: 'Spin', icon: Dices },
+  { href: '/', label: 'Spin', icon: Sparkles },
   { href: '/plans', label: 'Plans', icon: CalendarDays },
   { href: '/library', label: 'Library', icon: BookOpen },
   { href: '/shopping', label: 'Shop', icon: ShoppingCart },
-  { href: '/admin/upload', label: 'Admin', icon: Settings },
+  { href: '/admin/profiles', label: 'Admin', icon: Settings, isProfileLink: true },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
   const [shoppingCount, setShoppingCount] = useState(0);
+  const { handleProfileClick, isSparkleMode } = useSparkle();
 
   useEffect(() => {
     const updateCount = () => {
@@ -29,56 +32,70 @@ export function BottomNav() {
     return () => window.removeEventListener('shopping-list-updated', updateCount);
   }, []);
 
-  // Haptic feedback for mobile
-  const handleTap = () => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(10);
+  const handleTap = (isProfileLink?: boolean) => {
+    haptic.tap();
+    if (isProfileLink) {
+      handleProfileClick();
     }
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50">
-      {/* Background with blur and border */}
-      <div className="absolute inset-0 bg-black/95 backdrop-blur-xl border-t border-slot-gold/30" />
+    <nav 
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+      aria-label="Main navigation"
+    >
+      <div className="absolute inset-0 bg-bg/95 backdrop-blur-md border-t border-border-subtle" />
       
-      {/* Content with minimal safe area padding - just enough for notched devices */}
-      <div className="relative px-4 pb-[max(env(safe-area-inset-bottom,0px),4px)] pt-2">
-        <div className="flex items-center justify-around h-14">
+      <div className="relative px-2 pb-[max(env(safe-area-inset-bottom,0px),8px)] pt-2">
+        <div className="flex items-center justify-around">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href));
             const isShopping = item.href === '/shopping';
+            const isProfileLink = 'isProfileLink' in item && item.isProfileLink;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={handleTap}
+                onClick={() => handleTap(isProfileLink)}
                 className={cn(
-                  'relative flex flex-col items-center justify-center flex-1 py-2 rounded-lg transition-all duration-200 active:scale-95',
-                  isActive
-                    ? 'text-slot-gold'
-                    : 'text-gray-500 hover:text-gray-300'
+                  'relative flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors',
+                  isActive 
+                    ? isSparkleMode ? 'text-pink-400' : 'text-accent' 
+                    : 'text-text-muted'
                 )}
+                aria-current={isActive ? 'page' : undefined}
               >
                 <div className="relative">
-                  <Icon className={cn('w-6 h-6 transition-transform', isActive && 'scale-110')} />
+                  <Icon 
+                    className={cn(
+                      'w-5 h-5', 
+                      isActive && (isSparkleMode ? 'text-pink-400' : 'text-accent')
+                    )} 
+                    aria-hidden="true" 
+                  />
                   {isShopping && shoppingCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                    <span 
+                      className={cn(
+                        "absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full text-bg text-[9px] font-bold flex items-center justify-center px-1",
+                        isSparkleMode ? "bg-pink-500" : "bg-accent"
+                      )}
+                      aria-label={`${shoppingCount} items in shopping list`}
+                    >
                       {shoppingCount > 99 ? '99+' : shoppingCount}
                     </span>
                   )}
                 </div>
                 <span className={cn(
-                  'text-[10px] font-medium mt-1 transition-all',
-                  isActive ? 'text-slot-gold' : 'text-gray-500'
+                  'text-[10px] font-medium mt-1',
+                  isActive 
+                    ? isSparkleMode ? 'text-pink-400' : 'text-accent' 
+                    : 'text-text-muted'
                 )}>
                   {item.label}
                 </span>
-                {isActive && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-slot-gold rounded-full" />
-                )}
               </Link>
             );
           })}

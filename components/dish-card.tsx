@@ -8,12 +8,11 @@ import {
   Clock,
   ChefHat,
   Utensils,
-  Star,
-  AlertTriangle,
   ExternalLink,
   Lock,
   Unlock,
 } from 'lucide-react';
+import { isValidUrl } from '@/lib/utils/url';
 
 interface DishCardProps {
   dish: DishWithRelations;
@@ -25,50 +24,18 @@ interface DishCardProps {
 }
 
 const difficultyColors: Record<string, string> = {
-  easy: 'text-green-400',
-  medium: 'text-yellow-400',
-  hard: 'text-red-400',
-  unknown: 'text-gray-500',
+  easy: 'text-success',
+  medium: 'text-warning',
+  hard: 'text-error',
+  unknown: 'text-text-muted',
 };
 
 const kosherStyleColors: Record<string, string> = {
-  meat: 'bg-red-500/20 text-red-400',
-  dairy: 'bg-blue-500/20 text-blue-400',
-  pareve: 'bg-green-500/20 text-green-400',
-  unknown: 'bg-gray-500/20 text-gray-400',
+  meat: 'bg-error-subtle text-error',
+  dairy: 'bg-info-subtle text-info',
+  pareve: 'bg-success-subtle text-success',
+  unknown: 'bg-surface-2 text-text-secondary',
 };
-
-/**
- * Validates if a URL is absolute (starts with http:// or https://)
- * Also normalizes URLs that might be missing the protocol
- */
-function isValidUrl(url: string | null | undefined): string | null {
-  if (!url || !url.trim()) return null;
-  
-  let normalized = url.trim();
-  
-  // If it doesn't start with http:// or https://, try to add it
-  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
-    if (normalized.startsWith('www.')) {
-      normalized = 'https://' + normalized;
-    } else if (normalized.includes('.') && !normalized.includes(' ')) {
-      normalized = 'https://www.' + normalized;
-    } else {
-      return null;
-    }
-  }
-  
-  // Validate it's a proper URL
-  try {
-    const urlObj = new URL(normalized);
-    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
-      return null;
-    }
-    return normalized;
-  } catch {
-    return null;
-  }
-}
 
 export function DishCard({
   dish,
@@ -78,29 +45,27 @@ export function DishCard({
   className,
   compact = false,
 }: DishCardProps) {
-  const totalTime =
-    (dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0);
+  const totalTime = (dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0);
 
   if (compact) {
     return (
       <div
         className={cn(
-          'bg-slot-card rounded-xl border border-slot-accent/50 p-4',
-          'transition-all duration-200 hover:border-slot-purple/50',
+          'card-interactive p-4',
           className
         )}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h4 className="font-semibold text-white truncate">{dish.name}</h4>
-            <div className="flex items-center gap-2 mt-1">
+            <h4 className="font-display font-semibold text-text truncate">{dish.name}</h4>
+            <div className="flex items-center gap-2 mt-1.5">
               <Chip
                 label={SLOT_CATEGORY_LABELS[dish.slotCategory as keyof typeof SLOT_CATEGORY_LABELS] || dish.slotCategory}
                 variant="category"
                 category={dish.slotCategory}
               />
               {dish.kosher && (
-                <span className="text-xs text-green-400 font-medium">✓ Kosher</span>
+                <span className="text-xs text-success font-medium">Kosher</span>
               )}
             </div>
           </div>
@@ -108,13 +73,15 @@ export function DishCard({
             <button
               onClick={onToggleLock}
               className={cn(
-                'p-2 rounded-lg transition-colors',
+                'p-2 rounded-md transition-colors',
                 isLocked
-                  ? 'bg-slot-gold/20 text-slot-gold'
-                  : 'bg-slot-accent/50 text-gray-500 hover:text-white'
+                  ? 'bg-accent-subtle text-accent'
+                  : 'bg-surface-2 text-text-muted hover:text-text'
               )}
+              aria-label={isLocked ? `Unlock ${dish.name}` : `Lock ${dish.name}`}
+              aria-pressed={isLocked}
             >
-              {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+              {isLocked ? <Lock className="w-4 h-4" aria-hidden="true" /> : <Unlock className="w-4 h-4" aria-hidden="true" />}
             </button>
           )}
         </div>
@@ -122,161 +89,124 @@ export function DishCard({
     );
   }
 
+  const validUrl = isValidUrl(dish.sourceUrl);
+
   return (
-    <div
+    <article
       className={cn(
-        'bg-slot-card rounded-2xl border border-slot-accent/50 overflow-hidden',
-        'transition-all duration-300 hover:border-slot-purple/50',
-        'group',
+        'card-interactive group',
         className
       )}
     >
       {/* Header */}
-      <div className="p-5 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <Chip
-              label={SLOT_CATEGORY_LABELS[dish.slotCategory as keyof typeof SLOT_CATEGORY_LABELS] || dish.slotCategory}
-              variant="category"
-              category={dish.slotCategory}
-              className="mb-2"
-            />
-            <h3 className="font-bold text-lg text-white group-hover:text-slot-gold transition-colors">
-              {dish.name}
-            </h3>
-          </div>
-          {showLock && (
-            <button
-              onClick={onToggleLock}
-              className={cn(
-                'p-2.5 rounded-xl transition-all duration-200',
-                isLocked
-                  ? 'bg-slot-gold/20 text-slot-gold glow-gold'
-                  : 'bg-slot-accent/50 text-gray-500 hover:text-white hover:bg-slot-accent'
-              )}
-            >
-              {isLocked ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
-            </button>
-          )}
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0 flex-1">
+          <Chip
+            label={SLOT_CATEGORY_LABELS[dish.slotCategory as keyof typeof SLOT_CATEGORY_LABELS] || dish.slotCategory}
+            variant="category"
+            category={dish.slotCategory}
+            className="mb-2"
+          />
+          <h3 className="font-display font-semibold text-lg text-text group-hover:text-accent transition-colors">
+            {dish.name}
+          </h3>
         </div>
+        {showLock && (
+          <button
+            onClick={onToggleLock}
+            className={cn(
+              'p-2 rounded-md transition-colors',
+              isLocked
+                ? 'bg-accent-subtle text-accent'
+                : 'bg-surface-2 text-text-muted hover:text-text'
+            )}
+            aria-label={isLocked ? `Unlock ${dish.name}` : `Lock ${dish.name}`}
+            aria-pressed={isLocked}
+          >
+            {isLocked ? <Lock className="w-4 h-4" aria-hidden="true" /> : <Unlock className="w-4 h-4" aria-hidden="true" />}
+          </button>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="px-5 pb-5 space-y-4">
-        {/* Meta info row */}
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          {dish.kosher && (
-            <span className={cn('px-2 py-0.5 rounded-md text-xs font-medium', kosherStyleColors[dish.kosherStyle])}>
-              {dish.kosherStyle !== 'unknown' ? dish.kosherStyle : ''} Kosher
-            </span>
-          )}
-          {dish.difficulty !== 'unknown' && (
-            <span className={cn('flex items-center gap-1', difficultyColors[dish.difficulty])}>
-              <ChefHat className="w-3.5 h-3.5" />
-              {dish.difficulty}
-            </span>
-          )}
-          {totalTime > 0 && (
-            <span className="flex items-center gap-1 text-gray-400">
-              <Clock className="w-3.5 h-3.5" />
-              {totalTime} min
-            </span>
-          )}
-          {dish.servings && (
-            <span className="flex items-center gap-1 text-gray-400">
-              <Utensils className="w-3.5 h-3.5" />
-              {dish.servings} servings
-            </span>
-          )}
-        </div>
+      {/* Meta info */}
+      <div className="flex flex-wrap items-center gap-3 text-sm mb-4">
+        {dish.kosher && (
+          <span className={cn('px-2 py-0.5 rounded text-xs font-medium', kosherStyleColors[dish.kosherStyle])}>
+            {dish.kosherStyle !== 'unknown' ? dish.kosherStyle : ''} Kosher
+          </span>
+        )}
+        {dish.difficulty !== 'unknown' && (
+          <span className={cn('flex items-center gap-1 text-xs', difficultyColors[dish.difficulty])}>
+            <ChefHat className="w-3.5 h-3.5" aria-hidden="true" />
+            <span className="capitalize">{dish.difficulty}</span>
+          </span>
+        )}
+        {totalTime > 0 && (
+          <span className="flex items-center gap-1 text-xs text-text-secondary">
+            <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+            {totalTime} min
+          </span>
+        )}
+        {dish.servings && (
+          <span className="flex items-center gap-1 text-xs text-text-secondary">
+            <Utensils className="w-3.5 h-3.5" aria-hidden="true" />
+            {dish.servings} servings
+          </span>
+        )}
+      </div>
 
-        {/* Main protein & Cuisine */}
-        <div className="flex flex-wrap gap-2">
+      {/* Protein & Cuisine */}
+      {(dish.mainProtein || dish.cuisine) && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
           {dish.mainProtein && (
-            <span className="text-xs px-2 py-1 rounded-md bg-slot-accent/50 text-gray-300">
-              {dish.mainProtein}
-            </span>
+            <span className="chip text-xs capitalize">{dish.mainProtein}</span>
           )}
           {dish.cuisine && (
-            <span className="text-xs px-2 py-1 rounded-md bg-slot-accent/50 text-gray-300">
-              {dish.cuisine}
-            </span>
+            <span className="chip text-xs">{dish.cuisine}</span>
           )}
         </div>
+      )}
 
-        {/* Ingredients */}
-        {dish.ingredients.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">Ingredients</p>
-            <div className="flex flex-wrap gap-1">
-              {dish.ingredients.slice(0, 6).map((di) => (
-                <span
-                  key={di.ingredient.id}
-                  className="text-xs px-2 py-0.5 rounded bg-slot-accent/30 text-gray-400"
-                >
-                  {di.ingredient.name}
-                </span>
-              ))}
-              {dish.ingredients.length > 6 && (
-                <span className="text-xs px-2 py-0.5 rounded bg-slot-accent/30 text-gray-500">
-                  +{dish.ingredients.length - 6} more
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tags */}
-        {dish.tags.length > 0 && (
+      {/* Ingredients preview */}
+      {dish.ingredients.length > 0 && (
+        <div className="mb-4">
+          <p className="caption mb-1.5">Ingredients</p>
           <div className="flex flex-wrap gap-1">
-            {dish.tags.map((dt) => (
+            {dish.ingredients.slice(0, 5).map((di) => (
               <span
-                key={dt.tag.id}
-                className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-slot-purple/20 text-purple-300"
+                key={di.ingredient.id}
+                className="text-xs px-2 py-0.5 rounded bg-surface-2 text-text-secondary"
               >
-                <Star className="w-3 h-3" />
-                {dt.tag.name}
+                {di.ingredient.name}
               </span>
             ))}
-          </div>
-        )}
-
-        {/* Allergens */}
-        {dish.allergens.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {dish.allergens.map((da) => (
-              <span
-                key={da.allergen.id}
-                className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400"
-              >
-                <AlertTriangle className="w-3 h-3" />
-                {da.allergen.name}
+            {dish.ingredients.length > 5 && (
+              <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-text-muted">
+                +{dish.ingredients.length - 5} more
               </span>
-            ))}
+            )}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Notes */}
-        {dish.notes && (
-          <p className="text-sm text-gray-500 italic line-clamp-2">{dish.notes}</p>
-        )}
+      {/* Notes preview */}
+      {dish.notes && (
+        <p className="body-sm italic line-clamp-2 mb-4">{dish.notes}</p>
+      )}
 
-        {/* Source link */}
-        {(() => {
-          const validUrl = isValidUrl(dish.sourceUrl);
-          return validUrl ? (
-            <a
-              href={validUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-slot-purple hover:text-purple-400 transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Recipe source
-            </a>
-          ) : null;
-        })()}
-      </div>
-    </div>
+      {/* Source link */}
+      {validUrl && (
+        <a
+          href={validUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-sm text-accent hover:text-accent-text transition-colors"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+          View recipe
+        </a>
+      )}
+    </article>
   );
 }

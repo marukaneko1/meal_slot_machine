@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Toggle } from './ui/toggle';
 import { ChipGroup } from './ui/chip';
 import { Input } from './ui/input';
@@ -12,7 +12,7 @@ import {
   type KosherStyle,
   type DifficultyLevel,
 } from '@/lib/types';
-import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, SlidersHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 export interface FilterBarProps {
@@ -66,7 +66,7 @@ export function FilterBar({
     onSearchChange?.('');
   };
 
-  // Compact version - just a row of quick toggles
+  // Compact version
   if (compact) {
     return (
       <div className={cn('flex flex-wrap items-center gap-4', className)}>
@@ -78,10 +78,10 @@ export function FilterBar({
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
+            className="btn-ghost btn-sm gap-1"
           >
             <X className="w-3 h-3" />
-            Clear
+            Clear filters
           </button>
         )}
       </div>
@@ -89,43 +89,41 @@ export function FilterBar({
   }
 
   return (
-    <div className={cn('bg-black/50 rounded-2xl border border-slot-gold/30', className)}>
+    <div className={cn('card', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Filter className="w-5 h-5 text-slot-gold" />
-          <span className="font-semibold text-slot-gold">Filters</span>
+          <SlidersHorizontal className="w-4 h-4 text-accent" />
+          <span className="label">Filters</span>
           {hasActiveFilters && (
-            <span className="px-2 py-0.5 rounded-full bg-slot-gold/20 text-slot-gold text-xs font-medium">
-              Active
-            </span>
+            <span className="chip text-[10px]">Active</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
+              className="btn-ghost btn-sm gap-1"
             >
-              <X className="w-4 h-4" />
-              Clear all
+              <X className="w-3.5 h-3.5" />
+              Clear
             </button>
           )}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-lg hover:bg-slot-gold/10 text-gray-400 hover:text-slot-gold transition-colors"
+            className="btn-ghost btn-sm"
           >
             {isExpanded ? (
-              <ChevronUp className="w-5 h-5" />
+              <ChevronUp className="w-4 h-4" />
             ) : (
-              <ChevronDown className="w-5 h-5" />
+              <ChevronDown className="w-4 h-4" />
             )}
           </button>
         </div>
       </div>
 
-      {/* Quick filters (always visible) */}
-      <div className="px-4 pb-4 flex flex-wrap items-center gap-4">
+      {/* Quick filters */}
+      <div className="mt-4 flex flex-wrap items-center gap-4">
         {showSearch && (
           <Input
             placeholder="Search dishes..."
@@ -143,12 +141,10 @@ export function FilterBar({
 
       {/* Expanded filters */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-slot-gold/30 space-y-6">
+        <div className="mt-6 pt-6 border-t border-border-subtle space-y-6 animate-fade-in">
           {/* Kosher Style */}
           <div>
-            <label className="block text-sm font-medium text-slot-gold mb-2">
-              Kosher Style
-            </label>
+            <label className="label mb-2 block">Kosher Style</label>
             <ChipGroup
               options={KOSHER_STYLES.filter((s) => s !== 'unknown') as unknown as string[]}
               selected={(filters.kosherStyles as string[]) || []}
@@ -160,9 +156,7 @@ export function FilterBar({
 
           {/* Difficulty */}
           <div>
-            <label className="block text-sm font-medium text-slot-gold mb-2">
-              Difficulty
-            </label>
+            <label className="label mb-2 block">Difficulty</label>
             <ChipGroup
               options={DIFFICULTY_LEVELS.filter((d) => d !== 'unknown') as unknown as string[]}
               selected={(filters.difficulties as string[]) || []}
@@ -175,9 +169,7 @@ export function FilterBar({
           {/* Main Protein */}
           {allMainProteins.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-slot-gold mb-2">
-                Main Protein
-              </label>
+              <label className="label mb-2 block">Main Protein</label>
               <ChipGroup
                 options={allMainProteins}
                 selected={filters.mainProteins || []}
@@ -189,9 +181,7 @@ export function FilterBar({
           {/* Cuisine */}
           {allCuisines.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-slot-gold mb-2">
-                Cuisine
-              </label>
+              <label className="label mb-2 block">Cuisine</label>
               <ChipGroup
                 options={allCuisines}
                 selected={filters.cuisines || []}
@@ -202,9 +192,7 @@ export function FilterBar({
 
           {/* Allergens to Exclude */}
           <div>
-            <label className="block text-sm font-medium text-slot-gold mb-2">
-              Exclude Allergens
-            </label>
+            <label className="label mb-2 block">Exclude Allergens</label>
             <ChipGroup
               options={STANDARD_ALLERGENS as unknown as string[]}
               selected={filters.excludeAllergens || []}
@@ -214,11 +202,9 @@ export function FilterBar({
 
           {/* Include Ingredients */}
           <div>
-            <label className="block text-sm font-medium text-slot-gold mb-2">
-              Include Ingredients
-            </label>
+            <label className="label mb-2 block">Include Ingredients</label>
             {filters.includeIngredients && filters.includeIngredients.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
+              <div className="flex flex-wrap gap-1.5 mb-2">
                 {filters.includeIngredients.map((ing) => (
                   <button
                     key={ing}
@@ -230,7 +216,7 @@ export function FilterBar({
                         ),
                       })
                     }
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
+                    className="chip-interactive bg-success-subtle text-success gap-1"
                   >
                     {ing}
                     <X className="w-3 h-3" />
@@ -243,10 +229,9 @@ export function FilterBar({
                 placeholder="Search ingredients to include..."
                 value={ingredientSearch}
                 onChange={(e) => setIngredientSearch(e.target.value)}
-                className="text-sm"
               />
               {ingredientSearch && filteredIngredients.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-black border border-slot-gold/30 rounded-lg shadow-xl max-h-48 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-surface border border-border-subtle rounded-lg shadow-lg max-h-48 overflow-auto">
                   {filteredIngredients.slice(0, 10).map((ing) => (
                     <button
                       key={ing}
@@ -257,7 +242,7 @@ export function FilterBar({
                         });
                         setIngredientSearch('');
                       }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-slot-gold/10 hover:text-slot-gold transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-surface-2 transition-colors"
                     >
                       {ing}
                     </button>
@@ -267,47 +252,9 @@ export function FilterBar({
             </div>
           </div>
 
-          {/* Exclude Ingredients */}
-          <div>
-            <label className="block text-sm font-medium text-slot-gold mb-2">
-              Exclude Ingredients
-            </label>
-            {filters.excludeIngredients && filters.excludeIngredients.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
-                {filters.excludeIngredients.map((ing) => (
-                  <button
-                    key={ing}
-                    onClick={() =>
-                      onChange({
-                        ...filters,
-                        excludeIngredients: filters.excludeIngredients?.filter(
-                          (i) => i !== ing
-                        ),
-                      })
-                    }
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                  >
-                    {ing}
-                    <X className="w-3 h-3" />
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="relative">
-              <Input
-                placeholder="Search ingredients to exclude..."
-                value={ingredientSearch}
-                onChange={(e) => setIngredientSearch(e.target.value)}
-                className="text-sm"
-              />
-            </div>
-          </div>
-
           {/* Max Time */}
           <div>
-            <label className="block text-sm font-medium text-slot-gold mb-2">
-              Max Total Time (minutes)
-            </label>
+            <label className="label mb-2 block">Max Total Time (minutes)</label>
             <Input
               type="number"
               placeholder="e.g. 60"

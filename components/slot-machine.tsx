@@ -1,15 +1,28 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { DishWithRelations, SlotCategory, FilterOptions, LockedDishes } from '@/lib/types';
 import { SLOT_CATEGORIES, SLOT_CATEGORY_LABELS } from '@/lib/types';
-import { Lock, Unlock, Dices, RefreshCw, Save, AlertTriangle, ChefHat } from 'lucide-react';
+import { Lock, Unlock, Dices, RotateCw, Save, AlertCircle, ChefHat } from 'lucide-react';
 import { Button } from './ui/button';
 import { RecipeModal } from './recipe-modal';
+import { haptic } from '@/lib/utils/haptic';
+import { 
+  SLOT_ANIMATION, 
+  calculateTotalAnimationDuration, 
+  getReelStartDelay, 
+  getReelStopDelay 
+} from '@/lib/utils/animation';
+import { useKeyPress } from '@/lib/utils/hooks';
 
-// Slot symbols for spinning animation
-const SLOT_SYMBOLS = ['🍗', '🥩', '🥦', '🍚', '🍲', '🧁', '🍳', '🥗', '🍖', '🌽', '🥕', '🧀'];
+// Placeholder items for spinning animation
+const SPIN_ITEMS = [
+  'Chicken', 'Beef', 'Fish', 'Salad', 'Rice', 'Pasta',
+  'Soup', 'Stew', 'Roast', 'Grilled', 'Baked', 'Fresh',
+  'Savory', 'Crispy', 'Tender', 'Herbs', 'Spices', 'Garlic',
+  'Lemon', 'Butter', 'Creamy', 'Spicy', 'Sweet', 'Tangy',
+];
 
 interface SlotReelProps {
   category: SlotCategory;
@@ -17,6 +30,8 @@ interface SlotReelProps {
   isSpinning: boolean;
   isLocked: boolean;
   onToggleLock: () => void;
+  onViewRecipe: () => void;
+  startDelay: number;
   stopDelay: number;
   error?: string;
   reelIndex: number;
@@ -28,187 +43,232 @@ function SlotReel({
   isSpinning,
   isLocked,
   onToggleLock,
+  onViewRecipe,
+  startDelay,
   stopDelay,
   error,
   reelIndex,
 }: SlotReelProps) {
-  const [internalSpinning, setInternalSpinning] = useState(false);
-  const [showResult, setShowResult] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [phase, setPhase] = useState<'idle' | 'waiting' | 'fast' | 'slowing' | 'stopped'>('idle');
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const hasInitializedRef = useRef(false);
 
-  // Category colors
-  const categoryColors: Record<SlotCategory, { border: string; text: string; glow: string }> = {
-    main_chicken: { border: 'border-yellow-500', text: 'text-yellow-400', glow: 'shadow-yellow-500/30' },
-    main_beef: { border: 'border-red-500', text: 'text-red-400', glow: 'shadow-red-500/30' },
-    side_veg: { border: 'border-green-500', text: 'text-green-400', glow: 'shadow-green-500/30' },
-    side_starch: { border: 'border-orange-500', text: 'text-orange-400', glow: 'shadow-orange-500/30' },
-    soup: { border: 'border-blue-500', text: 'text-blue-400', glow: 'shadow-blue-500/30' },
-    muffin: { border: 'border-purple-500', text: 'text-purple-400', glow: 'shadow-purple-500/30' },
+  // Category accent colors
+  const categoryAccent: Record<SlotCategory, string> = {
+    main_chicken: 'border-amber-500/40',
+    main_beef: 'border-rose-500/40',
+    side_veg: 'border-emerald-500/40',
+    side_starch: 'border-orange-500/40',
+    soup: 'border-sky-500/40',
+    muffin: 'border-violet-500/40',
   };
 
-  const categoryEmoji: Record<SlotCategory, string> = {
-    main_chicken: '🍗',
-    main_beef: '🥩',
-    side_veg: '🥦',
-    side_starch: '🍚',
-    soup: '🍲',
-    muffin: '🧁',
+  const categoryBg: Record<SlotCategory, string> = {
+    main_chicken: 'bg-amber-500/5',
+    main_beef: 'bg-rose-500/5',
+    side_veg: 'bg-emerald-500/5',
+    side_starch: 'bg-orange-500/5',
+    soup: 'bg-sky-500/5',
+    muffin: 'bg-violet-500/5',
   };
 
-  const colors = categoryColors[category];
+  // Memoize spin items to prevent recalculation
+  const spinItems = useMemo(() => 
+    [...Array(30)].map((_, i) => {
+      const idx = (i + reelIndex * 7) % SPIN_ITEMS.length;
+      return SPIN_ITEMS[idx];
+    }),
+    [reelIndex]
+  );
 
-  // Handle spinning state
+  // Handle spin animation
   useEffect(() => {
+    const clearAllTimers = () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    };
+
     if (isSpinning && !isLocked) {
-      setInternalSpinning(true);
-      setShowResult(false);
+      if (hasInitializedRef.current) return;
+      hasInitializedRef.current = true;
       
-      // Stop spinning after delay
+      setPhase('waiting');
+      clearAllTimers();
+
+      // Start fast spinning
+      const startTimer = setTimeout(() => {
+        setPhase('fast');
+      }, startDelay);
+      timersRef.current.push(startTimer);
+
+      // Begin slowing down
+      const slowTimer = setTimeout(() => {
+        setPhase('slowing');
+      }, stopDelay - SLOT_ANIMATION.SLOWING_DURATION);
+      timersRef.current.push(slowTimer);
+
+      // Stop
       const stopTimer = setTimeout(() => {
-        setInternalSpinning(false);
-        // Small delay before showing result for dramatic effect
-        setTimeout(() => {
-          setShowResult(true);
-        }, 100);
+        setPhase('stopped');
       }, stopDelay);
+      timersRef.current.push(stopTimer);
 
-      return () => clearTimeout(stopTimer);
+      return clearAllTimers;
     } else if (!isSpinning) {
-      // When parent stops spinning, make sure we show result
-      if (!isLocked && dish) {
-        setInternalSpinning(false);
-        setShowResult(true);
-      }
+      hasInitializedRef.current = false;
+      clearAllTimers();
+      setPhase('idle');
     }
-  }, [isSpinning, isLocked, stopDelay, dish]);
+  }, [isSpinning, isLocked, startDelay, stopDelay]);
 
-  // Generate spinning items
-  const spinningItems = [...Array(20)].map((_, i) => {
-    const symbolIndex = (i + reelIndex * 3) % SLOT_SYMBOLS.length;
-    return SLOT_SYMBOLS[symbolIndex];
-  });
+  const isAnimating = phase === 'fast' || phase === 'slowing';
+  const hasStopped = phase === 'stopped' || phase === 'idle';
+  const showDish = hasStopped && dish && !error && !isLocked;
+  const showLoading = phase === 'stopped' && !dish && !error && !isLocked;
 
   return (
-    <div className="flex flex-col items-center flex-1 min-w-0 max-w-[140px]">
+    <div className="flex flex-col">
       {/* Category Label */}
-      <div className={cn('text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 truncate text-center w-full', colors.text)}>
-        {SLOT_CATEGORY_LABELS[category].replace(/[()]/g, '').trim()}
-      </div>
+      <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-text-muted mb-2 text-center truncate">
+        {SLOT_CATEGORY_LABELS[category]}
+      </p>
 
       {/* Reel Container */}
       <div
-        ref={containerRef}
         className={cn(
-          'relative w-full h-32 sm:h-40 rounded-xl border-2 overflow-hidden',
-          'bg-gradient-to-b from-slate-800 to-slate-900',
-          isLocked ? 'border-slot-gold shadow-lg shadow-slot-gold/30' : colors.border,
-          error && 'border-red-500 bg-red-900/20',
-          showResult && !error && 'shadow-lg',
-          showResult && !error && colors.glow
+          'relative overflow-hidden rounded-xl border-2 transition-all duration-200',
+          'h-32 sm:h-40',
+          isLocked 
+            ? 'border-accent bg-accent/5' 
+            : categoryAccent[category],
+          !isLocked && !error && categoryBg[category],
+          error && 'border-error/50 bg-error/5',
+          'shadow-sm'
         )}
+        role="region"
+        aria-label={`${SLOT_CATEGORY_LABELS[category]} reel`}
+        aria-live={phase === 'stopped' ? 'polite' : 'off'}
       >
-        {/* Spinning Animation */}
-        {internalSpinning && (
-          <div className="absolute inset-0 overflow-hidden">
-            <div 
-              className="flex flex-col items-center"
-              style={{
-                animation: `slotSpin 0.1s linear infinite`,
-              }}
-            >
-              {spinningItems.map((symbol, i) => (
-                <div
-                  key={i}
-                  className="text-4xl sm:text-5xl h-16 sm:h-20 flex items-center justify-center flex-shrink-0"
-                >
-                  {symbol}
-                </div>
-              ))}
-            </div>
-            {/* Blur effect at top and bottom */}
-            <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-slate-800 to-transparent pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none" />
-          </div>
-        )}
-
-        {/* Result Display - only show when NOT locked */}
-        {!internalSpinning && showResult && dish && !error && !isLocked && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-2 animate-bounce-in">
-            <div className="text-4xl sm:text-5xl mb-1">
-              {categoryEmoji[category]}
-            </div>
-            <div className="text-center px-1">
-              <p className="text-[10px] sm:text-xs font-bold text-white leading-tight line-clamp-2">
-                {dish.name}
-              </p>
-              {dish.kosher && (
-                <span className="inline-block mt-1 text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
-                  Kosher
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Locked Dish Display */}
-        {isLocked && dish && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
-            <div className="absolute top-1 right-1 bg-slot-gold rounded-full p-1">
-              <Lock className="w-3 h-3 text-slot-bg" />
-            </div>
-            <div className="text-4xl sm:text-5xl mb-1">
-              {categoryEmoji[category]}
-            </div>
-            <div className="text-center px-1">
-              <p className="text-[10px] sm:text-xs font-bold text-white leading-tight line-clamp-2">
-                {dish.name}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Error Display */}
-        {error && !internalSpinning && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center">
-            <AlertTriangle className="w-6 h-6 text-red-400 mb-1" />
-            <p className="text-[9px] sm:text-[10px] text-red-400 leading-tight">{error}</p>
-          </div>
-        )}
-
-        {/* Idle State */}
-        {!internalSpinning && !showResult && !dish && !error && !isLocked && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <ChefHat className="w-8 h-8 text-gray-600 mb-2" />
-            <span className="text-[10px] text-gray-600">Ready</span>
-          </div>
-        )}
-
-        {/* Center line indicator */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 sm:h-14 border-y-2 border-white/10 pointer-events-none" />
+        {/* Top gradient fade */}
+        <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-bg to-transparent z-10 pointer-events-none" />
         
-        {/* Shine effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
+        {/* Bottom gradient fade */}
+        <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-bg to-transparent z-10 pointer-events-none" />
+
+        {/* Spinning Animation */}
+        {isAnimating && (
+          <div 
+            className={cn(
+              "absolute inset-0 flex flex-col items-center",
+              phase === 'fast' && "animate-slot-fast",
+              phase === 'slowing' && "animate-slot-slow"
+            )}
+            aria-hidden="true"
+          >
+            {spinItems.map((item, i) => (
+              <div
+                key={i}
+                className="h-10 sm:h-12 flex items-center justify-center flex-shrink-0 px-2"
+              >
+                <span className="text-sm sm:text-base font-medium text-text-muted truncate">
+                  {item}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Waiting state (before this reel starts) */}
+        {phase === 'waiting' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="w-6 h-6 rounded-full border-2 border-text-muted/30 border-t-accent animate-spin" />
+          </div>
+        )}
+
+        {/* Loading state (reel stopped but waiting for data) */}
+        {showLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center animate-pulse">
+            <div className="w-5 h-5 rounded-full border-2 border-text-muted/30 border-t-accent animate-spin" />
+            <span className="text-[10px] text-text-muted mt-2">Loading...</span>
+          </div>
+        )}
+
+        {/* Result Display */}
+        {showDish && (
+          <button
+            onClick={onViewRecipe}
+            className={cn(
+              "absolute inset-0 flex flex-col items-center justify-center p-3 hover:bg-surface/50 transition-colors",
+              phase === 'stopped' && "animate-slot-land"
+            )}
+            aria-label={`View recipe for ${dish.name}`}
+          >
+            <p className="font-display font-semibold text-sm sm:text-base text-text text-center leading-tight line-clamp-3 px-1">
+              {dish.name}
+            </p>
+            {dish.kosher && (
+              <span className="mt-2 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-success font-medium border border-success/20">
+                Kosher
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* Locked State */}
+        {isLocked && dish && (
+          <button
+            onClick={onViewRecipe}
+            className="absolute inset-0 flex flex-col items-center justify-center p-3 hover:bg-accent/10 transition-colors"
+            aria-label={`View locked recipe for ${dish.name}`}
+          >
+            <div className="absolute top-2 right-2 p-1 rounded-full bg-accent/20">
+              <Lock className="w-3 h-3 text-accent" aria-hidden="true" />
+            </div>
+            <p className="font-display font-semibold text-sm sm:text-base text-text text-center leading-tight line-clamp-3 px-1">
+              {dish.name}
+            </p>
+          </button>
+        )}
+
+        {/* Error State */}
+        {error && hasStopped && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center" role="alert">
+            <AlertCircle className="w-5 h-5 text-error mb-1" aria-hidden="true" />
+            <p className="text-[10px] sm:text-xs text-error leading-tight">{error}</p>
+          </div>
+        )}
+
+        {/* Empty/Ready State */}
+        {phase === 'idle' && !dish && !error && !isLocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <ChefHat className="w-6 h-6 sm:w-8 sm:h-8 text-text-muted/50 mb-1" aria-hidden="true" />
+            <span className="text-[10px] sm:text-xs text-text-muted">Ready</span>
+          </div>
+        )}
       </div>
 
       {/* Lock Button */}
-      {dish && !isSpinning && !internalSpinning && (
+      {dish && !isSpinning && phase === 'idle' && (
         <button
           onClick={onToggleLock}
           className={cn(
-            'mt-2 px-3 py-1 rounded-lg text-xs font-medium transition-all',
+            'mt-2 px-2 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all',
+            'flex items-center justify-center gap-1',
             isLocked
-              ? 'bg-slot-gold text-slot-bg'
-              : 'bg-slate-700 text-gray-400 hover:text-white hover:bg-slate-600'
+              ? 'bg-accent text-bg'
+              : 'bg-surface-2 text-text-secondary hover:text-text hover:bg-surface-3'
           )}
+          aria-label={isLocked ? `Unlock ${dish.name}` : `Lock ${dish.name}`}
+          aria-pressed={isLocked}
         >
           {isLocked ? (
-            <span className="flex items-center gap-1">
-              <Lock className="w-3 h-3" /> Locked
-            </span>
+            <>
+              <Lock className="w-3 h-3" aria-hidden="true" /> Locked
+            </>
           ) : (
-            <span className="flex items-center gap-1">
-              <Unlock className="w-3 h-3" /> Lock
-            </span>
+            <>
+              <Unlock className="w-3 h-3" aria-hidden="true" /> Lock
+            </>
           )}
         </button>
       )}
@@ -247,24 +307,33 @@ export function SlotMachine({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const spinningRef = useRef(false);
 
+  // Calculate total animation duration dynamically
+  const totalAnimationDuration = useMemo(
+    () => calculateTotalAnimationDuration(categories.length),
+    [categories.length]
+  );
+
   const handleSpin = useCallback(async () => {
-    // Double-check with ref to prevent race conditions
     if (isSpinning || spinningRef.current) return;
     spinningRef.current = true;
     
-    // Haptic feedback for mobile
-    if ('vibrate' in navigator) {
-      navigator.vibrate([50, 30, 50]);
-    }
+    // Haptic feedback
+    haptic.spin();
     
-    setIsSpinning(true);
+    // Reset errors
     setErrors({});
     setWarnings([]);
+    
+    // Start animation IMMEDIATELY
+    setIsSpinning(true);
 
+    // Fetch dishes - this happens in parallel with animation
     try {
       const result = await onSpin(filters, lockedDishes);
 
       if (result.success && result.dishes) {
+        // Data is ready - update dishes immediately
+        // The reels will show dishes as soon as they reach 'stopped' phase
         setCurrentDishes(result.dishes);
         setHasSpun(true);
       }
@@ -287,17 +356,42 @@ export function SlotMachine({
       setErrors({ _global: 'Failed to generate dishes. Please try again.' });
     }
 
-    // Keep spinning state active for the animation duration
-    // The longest reel stops at 1500 + (5 * 400) = 3500ms
+    // End spin after all animations complete (dynamic timing)
     setTimeout(() => {
       setIsSpinning(false);
       spinningRef.current = false;
-    }, 3800);
-  }, [onSpin, filters, lockedDishes, isSpinning]);
+    }, totalAnimationDuration);
+  }, [onSpin, filters, lockedDishes, isSpinning, totalAnimationDuration]);
+
+  // Keyboard shortcut: Space or Enter to spin
+  useKeyPress('Enter', () => {
+    if (!isSpinning && !isModalOpen) {
+      handleSpin();
+    }
+  }, { disabled: isSpinning || isModalOpen });
+
+  useKeyPress(' ', (e) => {
+    if (!isSpinning && !isModalOpen) {
+      e.preventDefault();
+      handleSpin();
+    }
+  }, { disabled: isSpinning || isModalOpen });
+
+  // Keyboard shortcuts: 1-6 to toggle lock on reels
+  categories.forEach((category, index) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useKeyPress(String(index + 1), () => {
+      if (!isSpinning && !isModalOpen && currentDishes[category]) {
+        handleToggleLock(category);
+      }
+    }, { disabled: isSpinning || isModalOpen });
+  });
 
   const handleToggleLock = (category: SlotCategory) => {
     const dish = currentDishes[category];
     if (!dish) return;
+
+    haptic.lock();
 
     setLockedDishes((prev) => {
       if (prev[category]) {
@@ -310,6 +404,7 @@ export function SlotMachine({
 
   const handleSaveClick = async () => {
     if (Object.keys(currentDishes).length === categories.length) {
+      haptic.success();
       await onSave(currentDishes as Record<SlotCategory, DishWithRelations>);
     }
   };
@@ -321,189 +416,134 @@ export function SlotMachine({
     <div className="space-y-6">
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-yellow-400">Warnings</p>
-              <ul className="mt-1 text-sm text-yellow-300/80 space-y-1">
-                {warnings.map((warning, i) => (
-                  <li key={i}>{warning}</li>
-                ))}
-              </ul>
-            </div>
+        <div className="alert-warning" role="alert">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-medium">Heads up</p>
+            <ul className="mt-1 text-sm opacity-80 space-y-0.5">
+              {warnings.map((warning, i) => (
+                <li key={i}>{warning}</li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
 
       {/* Global Error */}
       {errors._global && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-            <p className="text-red-400">{errors._global}</p>
-          </div>
+        <div className="alert-error" role="alert">
+          <AlertCircle className="w-5 h-5" aria-hidden="true" />
+          <p>{errors._global}</p>
         </div>
       )}
 
       {/* Slot Machine Frame */}
-      <div className="relative flex items-center justify-center">
-        {/* Main Slot Machine */}
-        <div className="relative w-full max-w-4xl">
-          {/* Outer gold frame */}
-          <div className="absolute -inset-3 bg-gradient-to-b from-yellow-500 via-yellow-600 to-yellow-700 rounded-2xl" />
-          <div className="absolute -inset-2 bg-gradient-to-b from-yellow-600 via-yellow-700 to-yellow-800 rounded-xl" />
-          
-          {/* Inner machine */}
-          <div className="relative bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 rounded-lg p-4 sm:p-6 border-4 border-yellow-600">
-            {/* Top banner */}
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 via-red-500 to-red-600 px-6 sm:px-10 py-2 rounded-lg shadow-lg">
-              <span className="font-bold text-white text-sm sm:text-lg tracking-widest drop-shadow-lg">🎰 MEAL SLOT 🎰</span>
+      <div className="relative">
+        {/* Decorative frame */}
+        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-surface-3 to-surface-2 -z-10" />
+        
+        {/* Main Machine Body */}
+        <div className="bg-bg rounded-xl border border-border p-4 sm:p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="font-display text-xl sm:text-2xl font-semibold text-text">
+                Meal Slot
+              </h2>
+              <p className="text-sm text-text-muted mt-0.5">
+                {hasSpun ? 'Tap dishes to lock, then spin again' : 'Press Space or Enter to spin'}
+              </p>
             </div>
-
-            {/* Reels container - HORIZONTAL ROW */}
-            <div className="flex gap-2 sm:gap-3 pt-6 pb-4 justify-center">
-              {categories.map((category, index) => (
-                <SlotReel
-                  key={category}
-                  category={category}
-                  dish={currentDishes[category] || null}
-                  isSpinning={isSpinning}
-                  isLocked={!!lockedDishes[category]}
-                  onToggleLock={() => handleToggleLock(category)}
-                  stopDelay={1500 + index * 400}
-                  error={errors[category]}
-                  reelIndex={index}
-                />
-              ))}
-            </div>
-
+            
             {/* Spin Button */}
-            <div className="flex justify-center pt-4 border-t border-slate-700">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleSpin();
-                }}
-                onTouchEnd={(e) => {
-                  // Prevent ghost click on mobile
-                  e.preventDefault();
-                }}
-                disabled={isSpinning}
-                className={cn(
-                  'relative group transition-all duration-200',
-                  isSpinning ? 'cursor-not-allowed scale-95' : 'hover:scale-105 active:scale-95'
-                )}
-              >
-                {/* Button glow */}
-                <div className={cn(
-                  'absolute -inset-3 rounded-full blur-xl transition-opacity duration-300',
-                  isSpinning ? 'bg-yellow-500/30' : 'bg-red-500/40 group-hover:bg-red-500/60'
-                )} />
-                
-                {/* Button - larger touch target on mobile */}
-                <div className={cn(
-                  'relative w-24 h-24 sm:w-28 sm:h-28 rounded-full',
-                  'flex items-center justify-center',
-                  'border-4 shadow-xl',
-                  'touch-manipulation',
-                  isSpinning 
-                    ? 'bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600 border-yellow-300 shadow-yellow-500/50' 
-                    : 'bg-gradient-to-b from-red-500 via-red-600 to-red-700 border-red-400 shadow-red-500/50'
-                )}>
-                  <div className="text-center">
-                    <Dices className={cn(
-                      'w-8 h-8 sm:w-10 sm:h-10 mx-auto text-white drop-shadow-lg',
-                      isSpinning && 'animate-spin'
-                    )} />
-                    <span className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider drop-shadow">
-                      {isSpinning ? 'Spinning...' : 'SPIN!'}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      {hasSpun && (
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {lockedCount > 0 && lockedCount < categories.length && (
-            <Button
-              variant="secondary"
+            <button
               onClick={handleSpin}
               disabled={isSpinning}
+              className={cn(
+                'relative flex items-center justify-center',
+                'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl',
+                'font-bold text-sm sm:text-base',
+                'transition-all duration-200',
+                'touch-manipulation',
+                isSpinning 
+                  ? 'bg-surface-2 text-text-muted cursor-wait' 
+                  : 'bg-accent hover:bg-accent-hover text-bg shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
+              )}
+              aria-label={isSpinning ? 'Spinning...' : 'Spin the slot machine'}
             >
-              <RefreshCw className={cn('w-4 h-4', isSpinning && 'animate-spin')} />
-              Re-Spin Unlocked ({categories.length - lockedCount})
-            </Button>
-          )}
-
-          {hasAllDishes && (
-            <Button
-              variant="primary"
-              onClick={handleSaveClick}
-              disabled={isSpinning}
-            >
-              <Save className="w-4 h-4" />
-              Save Plan
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Lock hint */}
-      {hasSpun && !isSpinning && (
-        <p className="text-center text-sm text-gray-500">
-          {lockedCount === 0
-            ? '💡 Lock dishes you want to keep, then spin again!'
-            : `🔒 ${lockedCount} dish${lockedCount > 1 ? 'es' : ''} locked`}
-        </p>
-      )}
-
-      {/* Selected dishes detail */}
-      {hasSpun && hasAllDishes && !isSpinning && (
-        <div className="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-          <h3 className="text-lg font-bold mb-4 text-center">✨ Your Meal Plan</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {categories.map((category) => {
-              const dish = currentDishes[category];
-              if (!dish) return null;
-              return (
-                <button
-                  key={category}
-                  onClick={() => {
-                    setSelectedDish(dish);
-                    setIsModalOpen(true);
-                  }}
-                  className="bg-slate-900 rounded-lg p-3 border border-slate-700 hover:border-slot-gold hover:bg-slate-800 transition-all duration-200 text-left cursor-pointer group"
-                >
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">
-                    {SLOT_CATEGORY_LABELS[category]}
-                  </p>
-                  <p className="font-semibold text-sm text-white line-clamp-2 group-hover:text-slot-gold transition-colors">
-                    {dish.name}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {dish.kosher && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
-                        Kosher
-                      </span>
-                    )}
-                    {dish.difficulty !== 'unknown' && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 text-gray-400 capitalize">
-                        {dish.difficulty}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+              <div className="flex flex-col items-center">
+                <Dices className={cn('w-6 h-6 sm:w-7 sm:h-7', isSpinning && 'animate-spin')} aria-hidden="true" />
+                <span className="text-[10px] sm:text-xs mt-1 uppercase tracking-wide">
+                  {isSpinning ? 'Wait' : 'Spin'}
+                </span>
+              </div>
+            </button>
           </div>
+
+          {/* Reels */}
+          <div 
+            className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3"
+            role="group"
+            aria-label="Slot machine reels"
+          >
+            {categories.map((category, index) => (
+              <SlotReel
+                key={category}
+                category={category}
+                dish={currentDishes[category] || null}
+                isSpinning={isSpinning}
+                isLocked={!!lockedDishes[category]}
+                onToggleLock={() => handleToggleLock(category)}
+                onViewRecipe={() => {
+                  setSelectedDish(currentDishes[category]);
+                  setIsModalOpen(true);
+                }}
+                startDelay={getReelStartDelay(index)}
+                stopDelay={getReelStopDelay(index)}
+                error={errors[category]}
+                reelIndex={index}
+              />
+            ))}
+          </div>
+
+          {/* Footer Actions */}
+          {hasSpun && !isSpinning && (
+            <div className="mt-6 pt-4 border-t border-border-subtle">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-text-muted">
+                  {lockedCount === 0
+                    ? 'Lock your favorites (press 1-6), spin for the rest'
+                    : `${lockedCount} of ${categories.length} locked`}
+                </p>
+                <div className="flex items-center gap-2">
+                  {lockedCount > 0 && lockedCount < categories.length && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleSpin}
+                      disabled={isSpinning}
+                    >
+                      <RotateCw className={cn('w-4 h-4', isSpinning && 'animate-spin')} aria-hidden="true" />
+                      Re-spin ({categories.length - lockedCount})
+                    </Button>
+                  )}
+                  {hasAllDishes && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSaveClick}
+                      disabled={isSpinning}
+                    >
+                      <Save className="w-4 h-4" aria-hidden="true" />
+                      Save
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Recipe Modal */}
       <RecipeModal
@@ -515,22 +555,43 @@ export function SlotMachine({
         }}
       />
 
-      {/* CSS for slot spinning animation */}
+      {/* Animations */}
       <style jsx global>{`
-        @keyframes slotSpin {
-          0% {
-            transform: translateY(0);
+        @keyframes slot-fast {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-60%); }
+        }
+        
+        @keyframes slot-slow {
+          0% { transform: translateY(-60%); }
+          100% { transform: translateY(-70%); }
+        }
+        
+        @keyframes slot-land {
+          0% { 
+            opacity: 0; 
+            transform: scale(0.9) translateY(10px); 
           }
-          100% {
-            transform: translateY(-320px);
+          70% {
+            opacity: 1;
+            transform: scale(1.03) translateY(-3px);
+          }
+          100% { 
+            opacity: 1; 
+            transform: scale(1) translateY(0); 
           }
         }
         
-        /* Optimize for mobile touch */
-        .touch-manipulation {
-          touch-action: manipulation;
-          -webkit-user-select: none;
-          user-select: none;
+        .animate-slot-fast {
+          animation: slot-fast 0.08s linear infinite;
+        }
+        
+        .animate-slot-slow {
+          animation: slot-slow 0.2s linear infinite;
+        }
+        
+        .animate-slot-land {
+          animation: slot-land 0.3s ease-out forwards;
         }
       `}</style>
     </div>

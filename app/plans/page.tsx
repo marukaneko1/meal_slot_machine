@@ -1,25 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DishCard } from '@/components/dish-card';
 import { FilterBar } from '@/components/filter-bar';
 import { Select } from '@/components/ui/select';
 import { RecipeModal } from '@/components/recipe-modal';
+import { Toggle } from '@/components/ui/toggle';
+import { ErrorBoundary } from '@/components/error-boundary';
 import type { FilterOptions, SlotCategory, DishWithRelations } from '@/lib/types';
 import { SLOT_CATEGORY_LABELS, SLOT_CATEGORIES } from '@/lib/types';
 import {
   CalendarDays,
-  Dices,
+  Sparkles,
   Download,
   Printer,
   ChevronLeft,
   ChevronRight,
-  Loader2,
-  AlertTriangle,
+  AlertCircle,
   CheckCircle,
 } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { TOAST_DURATION } from '@/lib/utils/animation';
 
 interface Plan {
   id: string;
@@ -35,6 +36,7 @@ interface PlanDetail {
   mode: string;
   startDate: string | null;
   seed: string | null;
+  createdAt: string;
   profile?: { name: string } | null;
   items: {
     dayIndex: number;
@@ -59,6 +61,22 @@ interface GeneratedPlan {
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+/**
+ * Safely format a date string or return a fallback
+ */
+function formatDate(dateString: string | null | undefined, fallback = 'Not set'): string {
+  if (!dateString) return fallback;
+  
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) return fallback;
+    return date.toLocaleDateString();
+  } catch {
+    return fallback;
+  }
+}
+
 export default function PlansPage() {
   const [mode, setMode] = useState<'view' | 'generate'>('generate');
   const [planMode, setPlanMode] = useState<'daily' | 'weekly'>('weekly');
@@ -80,7 +98,6 @@ export default function PlansPage() {
   const [selectedDish, setSelectedDish] = useState<DishWithRelations | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Load initial data
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -153,7 +170,7 @@ export default function PlansPage() {
       } else {
         setError(result.errors?.[0]?.message || 'Failed to generate plan');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to connect to server');
     } finally {
       setIsGenerating(false);
@@ -184,8 +201,7 @@ export default function PlansPage() {
 
       if (response.ok) {
         setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-        // Refresh saved plans
+        setTimeout(() => setSaveSuccess(false), TOAST_DURATION.default);
         const plansRes = await fetch('/api/plans');
         if (plansRes.ok) setSavedPlans(await plansRes.json());
       }
@@ -223,10 +239,6 @@ export default function PlansPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const loadPlanDetail = async (planId: string) => {
     try {
       const response = await fetch(`/api/plans/${planId}`);
@@ -240,328 +252,318 @@ export default function PlansPage() {
   };
 
   return (
-    <div className="min-h-screen pt-6 pb-24 md:py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen py-6 md:py-10">
+      <div className="container-page">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <CalendarDays className="w-8 h-8 text-slot-purple" />
+            <h1 className="heading-1 flex items-center gap-3">
+              <CalendarDays className="w-8 h-8 text-accent" aria-hidden="true" />
               Meal Plans
             </h1>
-            <p className="text-gray-400 mt-2">
+            <p className="body-lg mt-2">
               Generate and manage your meal plans
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" role="group" aria-label="View mode">
             <Button
               variant={mode === 'generate' ? 'primary' : 'ghost'}
               onClick={() => setMode('generate')}
+              aria-pressed={mode === 'generate'}
             >
-              <Dices className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
               Generate
             </Button>
             <Button
               variant={mode === 'view' ? 'primary' : 'ghost'}
               onClick={() => setMode('view')}
+              aria-pressed={mode === 'view'}
             >
-              <CalendarDays className="w-4 h-4" />
-              Saved Plans
+              <CalendarDays className="w-4 h-4" aria-hidden="true" />
+              Saved
             </Button>
           </div>
-        </div>
+        </header>
 
-        {/* Save Success Toast */}
+        {/* Toast */}
         {saveSuccess && (
-          <div className="fixed top-20 right-4 bg-green-500/90 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-bounce-in z-50">
-            <CheckCircle className="w-5 h-5" />
+          <div 
+            className="fixed top-20 right-4 alert-success z-50 animate-slide-down shadow-lg"
+            role="status"
+            aria-live="polite"
+          >
+            <CheckCircle className="w-5 h-5" aria-hidden="true" />
             Plan saved successfully!
           </div>
         )}
 
-        {mode === 'generate' ? (
-          <>
-            {/* Generation Controls */}
-            <div className="bg-slot-card rounded-2xl border border-slot-accent/50 p-6 mb-8">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Select
-                  label="Plan Type"
-                  value={planMode}
-                  onChange={(e) => setPlanMode(e.target.value as 'daily' | 'weekly')}
-                  options={[
-                    { value: 'daily', label: 'Daily Plan' },
-                    { value: 'weekly', label: 'Weekly Plan (7 days)' },
-                  ]}
-                />
-                <Select
-                  label="Profile"
-                  value={selectedProfileId}
-                  onChange={(e) => setSelectedProfileId(e.target.value)}
-                  options={[
-                    { value: '', label: 'All Categories' },
-                    ...profiles.map((p) => ({ value: p.id, label: p.name })),
-                  ]}
-                />
-                {planMode === 'weekly' && (
-                  <div className="flex items-end">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
+        <ErrorBoundary>
+          {mode === 'generate' ? (
+            <>
+              {/* Generation Controls */}
+              <div className="card mb-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <Select
+                    label="Plan Type"
+                    value={planMode}
+                    onChange={(e) => setPlanMode(e.target.value as 'daily' | 'weekly')}
+                    options={[
+                      { value: 'daily', label: 'Daily Plan' },
+                      { value: 'weekly', label: 'Weekly Plan (7 days)' },
+                    ]}
+                  />
+                  <Select
+                    label="Profile"
+                    value={selectedProfileId}
+                    onChange={(e) => setSelectedProfileId(e.target.value)}
+                    options={[
+                      { value: '', label: 'All Categories' },
+                      ...profiles.map((p) => ({ value: p.id, label: p.name })),
+                    ]}
+                  />
+                  {planMode === 'weekly' && (
+                    <div className="flex items-end">
+                      <Toggle
                         checked={noRepeats}
-                        onChange={(e) => setNoRepeats(e.target.checked)}
-                        className="w-4 h-4 rounded bg-slot-accent border-slot-accent text-slot-purple focus:ring-slot-purple"
+                        onChange={setNoRepeats}
+                        label="Avoid repeats"
                       />
-                      <span className="text-sm text-gray-300">Avoid repeats across week</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              <FilterBar
-                filters={filters}
-                onChange={setFilters}
-                allIngredients={filterData.ingredients}
-                allCuisines={filterData.cuisines}
-                allMainProteins={filterData.mainProteins}
-              />
-            </div>
-
-            {/* Generate Button */}
-            <div className="text-center mb-8">
-              <Button
-                variant="gold"
-                size="lg"
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                isLoading={isGenerating}
-              >
-                <Dices className="w-5 h-5" />
-                Generate {planMode === 'weekly' ? 'Weekly' : 'Daily'} Plan
-              </Button>
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-8">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-red-400" />
-                  <p className="text-red-400">{error}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Generated Plan */}
-            {generatedPlan && (
-              <div className="space-y-8">
-                {/* Actions */}
-                <div className="flex flex-wrap items-center justify-between gap-4 no-print">
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <span>Seed: {generatedPlan.seed}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="secondary" onClick={handleExportCSV}>
-                      <Download className="w-4 h-4" />
-                      Export CSV
-                    </Button>
-                    <Button variant="secondary" onClick={handlePrint}>
-                      <Printer className="w-4 h-4" />
-                      Print
-                    </Button>
-                    <Button variant="primary" onClick={handleSavePlan}>
-                      Save Plan
-                    </Button>
-                  </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Warnings */}
-                {generatedPlan.warnings && generatedPlan.warnings.length > 0 && (
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 no-print">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                <FilterBar
+                  filters={filters}
+                  onChange={setFilters}
+                  allIngredients={filterData.ingredients}
+                  allCuisines={filterData.cuisines}
+                  allMainProteins={filterData.mainProteins}
+                />
+              </div>
+
+              {/* Generate Button */}
+              <div className="flex justify-center mb-8">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  isLoading={isGenerating}
+                >
+                  <Sparkles className="w-5 h-5" aria-hidden="true" />
+                  Generate {planMode === 'weekly' ? 'Weekly' : 'Daily'} Plan
+                </Button>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="alert-error mb-8" role="alert">
+                  <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                  <p>{error}</p>
+                </div>
+              )}
+
+              {/* Generated Plan */}
+              {generatedPlan && (
+                <div className="space-y-6">
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 no-print">
+                    <p className="caption">Seed: {generatedPlan.seed}</p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="secondary" onClick={handleExportCSV}>
+                        <Download className="w-4 h-4" aria-hidden="true" />
+                        Export
+                      </Button>
+                      <Button variant="secondary" onClick={() => window.print()}>
+                        <Printer className="w-4 h-4" aria-hidden="true" />
+                        Print
+                      </Button>
+                      <Button variant="primary" onClick={handleSavePlan}>
+                        Save Plan
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Warnings */}
+                  {generatedPlan.warnings && generatedPlan.warnings.length > 0 && (
+                    <div className="alert-warning no-print" role="alert">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
                       <div>
-                        <p className="font-medium text-yellow-400">Warnings</p>
-                        <ul className="mt-1 text-sm text-yellow-300/80 space-y-1">
+                        <p className="font-medium">Heads up</p>
+                        <ul className="mt-1 text-sm opacity-80 space-y-0.5">
                           {generatedPlan.warnings.map((w, i) => (
                             <li key={i}>{w}</li>
                           ))}
                         </ul>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Plan Grid */}
-                {planMode === 'weekly' ? (
-                  <div className="grid gap-6">
-                    {generatedPlan.days.map((day) => (
-                      <div
-                        key={day.dayIndex}
-                        className="bg-slot-card rounded-2xl border border-slot-accent/50 p-6"
-                      >
-                        <h3 className="text-lg font-bold mb-4">
-                          {DAYS_OF_WEEK[day.dayIndex]}
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                          {SLOT_CATEGORIES.map((cat) =>
-                            day.dishes[cat] ? (
-                              <button
-                                key={cat}
-                                onClick={() => {
-                                  setSelectedDish(day.dishes[cat]);
-                                  setIsModalOpen(true);
-                                }}
-                                className="text-left"
-                              >
-                                <DishCard dish={day.dishes[cat]} compact />
-                              </button>
-                            ) : null
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {generatedPlan.days[0] &&
-                      Object.values(generatedPlan.days[0].dishes).map((dish) => (
-                        <button
-                          key={dish.id}
-                          onClick={() => {
-                            setSelectedDish(dish);
-                            setIsModalOpen(true);
-                          }}
-                          className="text-left"
-                        >
-                          <DishCard dish={dish} />
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        ) : (
-          /* Saved Plans View */
-          <div className="space-y-6">
-            {selectedPlan ? (
-              <>
-                <Button variant="ghost" onClick={() => setSelectedPlan(null)}>
-                  <ChevronLeft className="w-4 h-4" />
-                  Back to list
-                </Button>
-
-                <div className="bg-slot-card rounded-2xl border border-slot-accent/50 p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h3 className="text-xl font-bold">
-                        {selectedPlan.mode === 'weekly' ? 'Weekly Plan' : 'Daily Plan'}
-                      </h3>
-                      <p className="text-gray-400 text-sm">
-                        Created: {new Date(selectedPlan.startDate || '').toLocaleDateString()}
-                        {selectedPlan.profile && ` • ${selectedPlan.profile.name}`}
-                      </p>
-                    </div>
-                    <Button variant="secondary" onClick={handlePrint}>
-                      <Printer className="w-4 h-4" />
-                      Print
-                    </Button>
-                  </div>
-
-                  {/* Group items by day */}
-                  {selectedPlan.mode === 'weekly' ? (
-                    <div className="space-y-6">
-                      {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
-                        const dayItems = selectedPlan.items.filter(
-                          (item) => item.dayIndex === dayIndex
-                        );
-                        if (dayItems.length === 0) return null;
-                        return (
-                          <div key={dayIndex}>
-                            <h4 className="font-semibold mb-3">
-                              {DAYS_OF_WEEK[dayIndex]}
-                            </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                              {dayItems.map((item) => (
+                  {/* Plan Grid */}
+                  {planMode === 'weekly' ? (
+                    <div className="space-y-4">
+                      {generatedPlan.days.map((day) => (
+                        <div key={day.dayIndex} className="card">
+                          <h3 className="heading-4 mb-4">{DAYS_OF_WEEK[day.dayIndex]}</h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                            {SLOT_CATEGORIES.map((cat) =>
+                              day.dishes[cat] ? (
                                 <button
-                                  key={item.dish.id}
+                                  key={cat}
                                   onClick={() => {
-                                    setSelectedDish(item.dish);
+                                    setSelectedDish(day.dishes[cat]);
                                     setIsModalOpen(true);
                                   }}
                                   className="text-left"
+                                  aria-label={`View ${day.dishes[cat].name}`}
                                 >
-                                  <DishCard dish={item.dish} compact />
+                                  <DishCard dish={day.dishes[cat]} compact />
                                 </button>
-                              ))}
-                            </div>
+                              ) : null
+                            )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {selectedPlan.items.map((item) => (
-                        <button
-                          key={item.dish.id}
-                          onClick={() => {
-                            setSelectedDish(item.dish);
-                            setIsModalOpen(true);
-                          }}
-                          className="text-left"
-                        >
-                          <DishCard dish={item.dish} />
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {generatedPlan.days[0] &&
+                        Object.values(generatedPlan.days[0].dishes).map((dish) => (
+                          <button
+                            key={dish.id}
+                            onClick={() => {
+                              setSelectedDish(dish);
+                              setIsModalOpen(true);
+                            }}
+                            className="text-left"
+                            aria-label={`View ${dish.name}`}
+                          >
+                            <DishCard dish={dish} />
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>
-              </>
-            ) : (
-              <>
-                {savedPlans.length === 0 ? (
-                  <div className="text-center py-20">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slot-accent/50 mb-4">
-                      <CalendarDays className="w-8 h-8 text-gray-500" />
+              )}
+            </>
+          ) : (
+            /* Saved Plans View */
+            <div className="space-y-6">
+              {selectedPlan ? (
+                <>
+                  <Button variant="ghost" onClick={() => setSelectedPlan(null)}>
+                    <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                    Back to list
+                  </Button>
+
+                  <div className="card">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="heading-3">
+                          {selectedPlan.mode === 'weekly' ? 'Weekly Plan' : 'Daily Plan'}
+                        </h3>
+                        <p className="body-sm mt-1">
+                          Created: {formatDate(selectedPlan.createdAt || selectedPlan.startDate)}
+                          {selectedPlan.profile && ` • ${selectedPlan.profile.name}`}
+                        </p>
+                      </div>
+                      <Button variant="secondary" onClick={() => window.print()}>
+                        <Printer className="w-4 h-4" aria-hidden="true" />
+                        Print
+                      </Button>
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">No saved plans</h3>
-                    <p className="text-gray-400 mb-6">
-                      Generate and save a plan to see it here
-                    </p>
-                    <Button variant="primary" onClick={() => setMode('generate')}>
-                      <Dices className="w-4 h-4" />
-                      Generate Plan
-                    </Button>
+
+                    {selectedPlan.mode === 'weekly' ? (
+                      <div className="space-y-6">
+                        {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
+                          const dayItems = selectedPlan.items.filter(
+                            (item) => item.dayIndex === dayIndex
+                          );
+                          if (dayItems.length === 0) return null;
+                          return (
+                            <div key={dayIndex}>
+                              <h4 className="heading-4 mb-3">{DAYS_OF_WEEK[dayIndex]}</h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                                {dayItems.map((item) => (
+                                  <button
+                                    key={item.dish.id}
+                                    onClick={() => {
+                                      setSelectedDish(item.dish);
+                                      setIsModalOpen(true);
+                                    }}
+                                    className="text-left"
+                                    aria-label={`View ${item.dish.name}`}
+                                  >
+                                    <DishCard dish={item.dish} compact />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {selectedPlan.items.map((item) => (
+                          <button
+                            key={item.dish.id}
+                            onClick={() => {
+                              setSelectedDish(item.dish);
+                              setIsModalOpen(true);
+                            }}
+                            className="text-left"
+                            aria-label={`View ${item.dish.name}`}
+                          >
+                            <DishCard dish={item.dish} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {savedPlans.map((plan) => (
-                      <button
-                        key={plan.id}
-                        onClick={() => loadPlanDetail(plan.id)}
-                        className="bg-slot-card rounded-xl border border-slot-accent/50 p-4 text-left hover:border-slot-purple/50 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
+                </>
+              ) : (
+                <>
+                  {savedPlans.length === 0 ? (
+                    <div className="empty-state">
+                      <CalendarDays className="empty-state-icon" aria-hidden="true" />
+                      <h3 className="empty-state-title">No saved plans</h3>
+                      <p className="empty-state-description">
+                        Generate and save a plan to see it here
+                      </p>
+                      <Button variant="primary" onClick={() => setMode('generate')} className="mt-4">
+                        <Sparkles className="w-4 h-4" aria-hidden="true" />
+                        Generate Plan
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {savedPlans.map((plan) => (
+                        <button
+                          key={plan.id}
+                          onClick={() => loadPlanDetail(plan.id)}
+                          className="card-interactive w-full text-left flex items-center justify-between"
+                          aria-label={`View ${plan.mode === 'weekly' ? 'Weekly' : 'Daily'} Plan from ${formatDate(plan.createdAt || plan.startDate)}`}
+                        >
                           <div>
-                            <h4 className="font-semibold">
+                            <h4 className="label">
                               {plan.mode === 'weekly' ? 'Weekly Plan' : 'Daily Plan'}
                             </h4>
-                            <p className="text-sm text-gray-400">
-                              {plan.startDate &&
-                                new Date(plan.startDate).toLocaleDateString()}
+                            <p className="body-sm mt-0.5">
+                              {formatDate(plan.createdAt || plan.startDate)}
                               {plan.profile && ` • ${plan.profile.name}`}
                               {` • ${plan._count.items} dishes`}
                             </p>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-gray-500" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
+                          <ChevronRight className="w-5 h-5 text-text-muted" aria-hidden="true" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </ErrorBoundary>
 
         {/* Recipe Modal */}
         <RecipeModal

@@ -1,12 +1,15 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Clock, Utensils, ChefHat, ExternalLink, AlertTriangle, ShoppingCart, Check } from 'lucide-react';
 import type { DishWithRelations } from '@/lib/types';
 import { SLOT_CATEGORY_LABELS } from '@/lib/types';
 import { Chip } from './ui/chip';
+import { Button } from './ui/button';
 import { cn } from '@/lib/utils/cn';
 import { addIngredientsToShoppingList } from '@/lib/utils/shopping-list';
+import { isValidUrl } from '@/lib/utils/url';
+import { TOAST_DURATION } from '@/lib/utils/animation';
 
 interface RecipeModalProps {
   dish: DishWithRelations | null;
@@ -15,54 +18,67 @@ interface RecipeModalProps {
 }
 
 const difficultyColors: Record<string, string> = {
-  easy: 'text-green-400',
-  medium: 'text-yellow-400',
-  hard: 'text-red-400',
-  unknown: 'text-gray-500',
+  easy: 'text-success',
+  medium: 'text-warning',
+  hard: 'text-error',
+  unknown: 'text-text-muted',
 };
 
 const kosherStyleColors: Record<string, string> = {
-  meat: 'bg-red-500/20 text-red-400',
-  dairy: 'bg-blue-500/20 text-blue-400',
-  pareve: 'bg-green-500/20 text-green-400',
-  unknown: 'bg-gray-500/20 text-gray-400',
+  meat: 'bg-error-subtle text-error',
+  dairy: 'bg-info-subtle text-info',
+  pareve: 'bg-success-subtle text-success',
+  unknown: 'bg-surface-2 text-text-secondary',
 };
-
-/**
- * Validates if a URL is absolute (starts with http:// or https://)
- * Also normalizes URLs that might be missing the protocol
- */
-function isValidUrl(url: string | null | undefined): string | null {
-  if (!url || !url.trim()) return null;
-  
-  let normalized = url.trim();
-  
-  // If it doesn't start with http:// or https://, try to add it
-  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
-    if (normalized.startsWith('www.')) {
-      normalized = 'https://' + normalized;
-    } else if (normalized.includes('.') && !normalized.includes(' ')) {
-      normalized = 'https://www.' + normalized;
-    } else {
-      return null;
-    }
-  }
-  
-  // Validate it's a proper URL
-  try {
-    const urlObj = new URL(normalized);
-    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
-      return null;
-    }
-    return normalized;
-  } catch {
-    return null;
-  }
-}
 
 export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
   const [addedToCart, setAddedToCart] = useState(false);
   const [addedIngredients, setAddedIngredients] = useState<Set<string>>(new Set());
+  
+  // Refs to track timeouts for cleanup
+  const cartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ingredientTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Cleanup all timeouts when modal closes or unmounts
+  useEffect(() => {
+    if (!isOpen) {
+      // Clear cart timeout
+      if (cartTimeoutRef.current) {
+        clearTimeout(cartTimeoutRef.current);
+        cartTimeoutRef.current = null;
+      }
+      
+      // Clear all ingredient timeouts
+      ingredientTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      ingredientTimeoutsRef.current.clear();
+      
+      // Reset state
+      setAddedToCart(false);
+      setAddedIngredients(new Set());
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (cartTimeoutRef.current) {
+        clearTimeout(cartTimeoutRef.current);
+      }
+      ingredientTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+    };
+  }, [isOpen]);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !dish) return null;
 
@@ -77,62 +93,82 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
     const ingredientNames = dish.ingredients.map((di) => di.ingredient.name);
     addIngredientsToShoppingList(ingredientNames, dish.name);
     setAddedToCart(true);
-    // Mark all ingredients as added
     setAddedIngredients(new Set(ingredientNames));
-    setTimeout(() => {
+    
+    // Clear any existing timeout
+    if (cartTimeoutRef.current) {
+      clearTimeout(cartTimeoutRef.current);
+    }
+    
+    cartTimeoutRef.current = setTimeout(() => {
       setAddedToCart(false);
       setAddedIngredients(new Set());
-    }, 3000);
+      cartTimeoutRef.current = null;
+    }, TOAST_DURATION.default);
   };
 
   const handleAddSingleIngredient = (ingredientName: string) => {
     addIngredientsToShoppingList([ingredientName], dish.name);
+    
     setAddedIngredients((prev) => {
       const newSet = new Set(prev);
       newSet.add(ingredientName);
       return newSet;
     });
-    setTimeout(() => {
+    
+    // Clear any existing timeout for this ingredient
+    const existingTimeout = ingredientTimeoutsRef.current.get(ingredientName);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+    
+    const timeoutId = setTimeout(() => {
       setAddedIngredients((prev) => {
         const newSet = new Set(prev);
         newSet.delete(ingredientName);
         return newSet;
       });
+      ingredientTimeoutsRef.current.delete(ingredientName);
     }, 2000);
+    
+    ingredientTimeoutsRef.current.set(ingredientName, timeoutId);
   };
+
+  const validUrl = isValidUrl(dish.sourceUrl);
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/70 z-50 transition-opacity"
+        className="modal-backdrop animate-fade-in"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recipe-modal-title"
+      >
         <div
-          className={cn(
-            'relative w-full max-w-2xl max-h-[90vh]',
-            'bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900',
-            'rounded-2xl border-2 border-slot-accent/50 shadow-2xl',
-            'overflow-hidden pointer-events-auto',
-            'animate-bounce-in'
-          )}
+          className="modal-content w-full max-w-2xl max-h-[90vh] pointer-events-auto animate-slide-up"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors"
+            className="absolute top-4 right-4 z-10 p-2 rounded-md bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text transition-colors"
+            aria-label="Close recipe modal"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
 
           {/* Content */}
           <div className="overflow-y-auto max-h-[90vh]">
             {/* Header */}
-            <div className="p-6 pb-4 border-b border-slate-700">
+            <div className="p-6 border-b border-border-subtle">
               <div className="pr-10">
                 <Chip
                   label={SLOT_CATEGORY_LABELS[dish.slotCategory as keyof typeof SLOT_CATEGORY_LABELS] || dish.slotCategory}
@@ -140,35 +176,30 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
                   category={dish.slotCategory}
                   className="mb-3"
                 />
-                <h2 className="text-2xl font-bold text-white mb-4">{dish.name}</h2>
+                <h2 id="recipe-modal-title" className="heading-2 text-balance">{dish.name}</h2>
 
                 {/* Meta Info */}
-                <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-4 mt-4 text-sm">
                   {dish.kosher && (
-                    <span className={cn('px-3 py-1 rounded-md text-xs font-medium', kosherStyleColors[dish.kosherStyle])}>
+                    <span className={cn('px-3 py-1 rounded text-xs font-medium', kosherStyleColors[dish.kosherStyle])}>
                       {dish.kosherStyle !== 'unknown' ? dish.kosherStyle : ''} Kosher
                     </span>
                   )}
                   {dish.difficulty !== 'unknown' && (
                     <span className={cn('flex items-center gap-1.5', difficultyColors[dish.difficulty])}>
-                      <ChefHat className="w-4 h-4" />
+                      <ChefHat className="w-4 h-4" aria-hidden="true" />
                       <span className="capitalize">{dish.difficulty}</span>
                     </span>
                   )}
                   {totalTime > 0 && (
-                    <span className="flex items-center gap-1.5 text-gray-400">
-                      <Clock className="w-4 h-4" />
+                    <span className="flex items-center gap-1.5 text-text-secondary">
+                      <Clock className="w-4 h-4" aria-hidden="true" />
                       {totalTime} min
-                      {dish.prepTimeMinutes && dish.cookTimeMinutes && (
-                        <span className="text-gray-500">
-                          ({dish.prepTimeMinutes} prep + {dish.cookTimeMinutes} cook)
-                        </span>
-                      )}
                     </span>
                   )}
                   {dish.servings && (
-                    <span className="flex items-center gap-1.5 text-gray-400">
-                      <Utensils className="w-4 h-4" />
+                    <span className="flex items-center gap-1.5 text-text-secondary">
+                      <Utensils className="w-4 h-4" aria-hidden="true" />
                       {dish.servings} servings
                     </span>
                   )}
@@ -178,79 +209,72 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
 
             {/* Body */}
             <div className="p-6 space-y-6">
-              {/* Main Protein & Cuisine */}
+              {/* Protein & Cuisine */}
               {(dish.mainProtein || dish.cuisine) && (
                 <div className="flex flex-wrap gap-2">
                   {dish.mainProtein && (
-                    <span className="text-sm px-3 py-1.5 rounded-md bg-slot-accent/50 text-gray-300">
-                      {dish.mainProtein}
-                    </span>
+                    <span className="chip capitalize">{dish.mainProtein}</span>
                   )}
                   {dish.cuisine && (
-                    <span className="text-sm px-3 py-1.5 rounded-md bg-slot-accent/50 text-gray-300">
-                      {dish.cuisine}
-                    </span>
+                    <span className="chip">{dish.cuisine}</span>
                   )}
                 </div>
               )}
 
-              {/* Ingredients List */}
+              {/* Ingredients */}
               {dish.ingredients.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Utensils className="w-5 h-5 text-slot-gold" />
+                    <h3 className="heading-4 flex items-center gap-2">
+                      <Utensils className="w-5 h-5 text-accent" aria-hidden="true" />
                       Ingredients
                     </h3>
-                    <button
+                    <Button
                       onClick={handleAddToShoppingList}
-                      className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
-                        addedToCart
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                          : 'bg-slot-gold/10 hover:bg-slot-gold/20 text-slot-gold border border-slot-gold/30 hover:border-slot-gold/50'
-                      )}
+                      variant={addedToCart ? 'accent' : 'secondary'}
+                      size="sm"
+                      aria-label={addedToCart ? 'All ingredients added to shopping list' : 'Add all ingredients to shopping list'}
                     >
                       {addedToCart ? (
                         <>
-                          <Check className="w-4 h-4" />
+                          <Check className="w-4 h-4" aria-hidden="true" />
                           Added!
                         </>
                       ) : (
                         <>
-                          <ShoppingCart className="w-4 h-4" />
-                          Add to Shopping List
+                          <ShoppingCart className="w-4 h-4" aria-hidden="true" />
+                          Add all to list
                         </>
                       )}
-                    </button>
+                    </Button>
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="space-y-2" aria-label="Ingredient list">
                     {dish.ingredients.map((di) => {
                       const ingredientName = di.ingredient.name;
                       const isAdded = addedIngredients.has(ingredientName);
                       return (
                         <li
                           key={di.ingredient.id}
-                          className="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-slot-gold/50 transition-colors"
+                          className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-2 border border-border-subtle hover:border-border transition-colors"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <span className="w-2 h-2 rounded-full bg-slot-gold flex-shrink-0" />
-                            <span className="text-white">{ingredientName}</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" aria-hidden="true" />
+                            <span className="text-text">{ingredientName}</span>
                           </div>
                           <button
                             onClick={() => handleAddSingleIngredient(ingredientName)}
                             className={cn(
-                              'p-2 rounded-lg transition-all flex-shrink-0',
+                              'p-1.5 rounded-md transition-colors flex-shrink-0',
                               isAdded
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                                : 'bg-slot-gold/10 hover:bg-slot-gold/20 text-slot-gold border border-slot-gold/30 hover:border-slot-gold/50'
+                                ? 'bg-success-subtle text-success'
+                                : 'bg-surface-3 hover:bg-accent-subtle text-text-secondary hover:text-accent'
                             )}
-                            title={isAdded ? 'Added to shopping list' : 'Add to shopping list'}
+                            aria-label={isAdded ? `${ingredientName} added` : `Add ${ingredientName} to shopping list`}
                           >
                             {isAdded ? (
-                              <Check className="w-4 h-4" />
+                              <Check className="w-4 h-4" aria-hidden="true" />
                             ) : (
-                              <ShoppingCart className="w-4 h-4" />
+                              <ShoppingCart className="w-4 h-4" aria-hidden="true" />
                             )}
                           </button>
                         </li>
@@ -263,13 +287,10 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
               {/* Tags */}
               {dish.tags.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-400 mb-2">Tags</h3>
+                  <h3 className="caption mb-2">Tags</h3>
                   <div className="flex flex-wrap gap-2">
                     {dish.tags.map((dt) => (
-                      <span
-                        key={dt.tag.id}
-                        className="inline-flex items-center gap-1 text-sm px-3 py-1 rounded-full bg-slot-purple/20 text-purple-300"
-                      >
+                      <span key={dt.tag.id} className="chip">
                         {dt.tag.name}
                       </span>
                     ))}
@@ -280,17 +301,17 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
               {/* Allergens */}
               {dish.allergens.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                  <h3 className="caption mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-warning" aria-hidden="true" />
                     Allergens
                   </h3>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2" role="list" aria-label="Allergen list">
                     {dish.allergens.map((da) => (
                       <span
                         key={da.allergen.id}
-                        className="inline-flex items-center gap-1 text-sm px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400"
+                        className="chip bg-warning-subtle text-warning"
+                        role="listitem"
                       >
-                        <AlertTriangle className="w-3 h-3" />
                         {da.allergen.name}
                       </span>
                     ))}
@@ -301,41 +322,30 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
               {/* Notes */}
               {dish.notes && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-400 mb-2">Notes</h3>
-                  <p className="text-white leading-relaxed">{dish.notes}</p>
+                  <h3 className="caption mb-2">Notes</h3>
+                  <p className="body-base">{dish.notes}</p>
                 </div>
               )}
 
-              {/* Source Link - Always show section */}
-              <div className="pt-4 border-t border-slate-700">
-                <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4 text-slot-gold" />
+              {/* Source Link */}
+              <div className="pt-4 border-t border-border-subtle">
+                <h3 className="caption mb-3 flex items-center gap-2">
+                  <ExternalLink className="w-4 h-4 text-accent" aria-hidden="true" />
                   Recipe Source
                 </h3>
-                {(() => {
-                  const validUrl = isValidUrl(dish.sourceUrl);
-                  return validUrl ? (
-                    <>
-                      <a
-                        href={validUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-slot-gold/10 hover:bg-slot-gold/20 border border-slot-gold/30 hover:border-slot-gold/50 text-slot-gold hover:text-yellow-400 transition-all font-medium group"
-                      >
-                        <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        <span>View Full Recipe on Source Website</span>
-                        <ExternalLink className="w-4 h-4 opacity-50" />
-                      </a>
-                      <p className="mt-2 text-xs text-gray-500 break-all">
-                        {validUrl}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">
-                      {dish.sourceUrl ? 'Invalid source URL (must be a full URL starting with http:// or https://)' : 'No source URL available for this recipe'}
-                    </p>
-                  );
-                })()}
+                {validUrl ? (
+                  <a
+                    href={validUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-accent w-full justify-center"
+                  >
+                    <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                    View Full Recipe
+                  </a>
+                ) : (
+                  <p className="body-sm italic">No source URL available</p>
+                )}
               </div>
             </div>
           </div>

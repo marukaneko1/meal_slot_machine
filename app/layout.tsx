@@ -6,8 +6,8 @@ import { PWAProvider } from '@/components/pwa-provider';
 import { AppWrapper } from '@/components/app-wrapper';
 
 export const metadata: Metadata = {
-  title: 'Meal Slot - Spin Your Meals',
-  description: 'Generate meal plans with a slot machine interface',
+  title: 'Meal Slot — Weekly Meal Planning',
+  description: 'Generate thoughtful meal plans with a spin',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
@@ -17,31 +17,19 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Meal Slot',
-    startupImage: [
-      {
-        url: '/icons/icon-512.png',
-        media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
-      },
-    ],
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
-    title: 'Meal Slot - Spin Your Meals',
-    description: 'Generate meal plans with a slot machine interface',
+    title: 'Meal Slot — Weekly Meal Planning',
+    description: 'Generate thoughtful meal plans with a spin',
     type: 'website',
-  },
-  other: {
-    'mobile-web-app-capable': 'yes',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
-    { media: '(prefers-color-scheme: light)', color: '#000000' },
-  ],
+  themeColor: '#0C0A09',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -58,57 +46,20 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        {/* PWA Meta Tags */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Meal Slot" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
-        <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
-        
-        {/* Splash screens for iOS */}
-        <link
-          rel="apple-touch-startup-image"
-          href="/icons/icon-512.png"
-          media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/icons/icon-512.png"
-          media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/icons/icon-512.png"
-          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/icons/icon-512.png"
-          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/icons/icon-512.png"
-          media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)"
-        />
-
-        {/* Prevent zoom on iOS inputs */}
         <meta name="format-detection" content="telephone=no" />
       </head>
-      <body className="antialiased bg-black text-white">
+      <body className="antialiased">
         <AppWrapper>
           <PWAProvider>
-            {/* Top navigation - desktop only */}
             <Navigation />
-            
-            {/* Main content - no top padding on mobile, has top padding on desktop */}
-            <main className="pt-0 md:pt-14 pb-24 md:pb-4 min-h-screen">
+            <main className="min-h-screen pt-0 md:pt-14 pb-20 md:pb-0">
               {children}
             </main>
-            
-            {/* Bottom navigation - mobile only */}
             <BottomNav />
           </PWAProvider>
         </AppWrapper>

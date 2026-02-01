@@ -1,7 +1,7 @@
 'use server';
 
 import prisma from '@/lib/db';
-import { createSeededRNG, generateSeed, shuffleArray, pickRandom } from '@/lib/utils/rng';
+import { createSeededRNG, generateSeed, shuffleArray } from '@/lib/utils/rng';
 import {
   SLOT_CATEGORIES,
   type SlotCategory,
@@ -13,6 +13,8 @@ import {
   type GeneratedPlan,
   type GeneratedDay,
   type PlanError,
+  type KosherStyle,
+  type DifficultyLevel,
 } from '@/lib/types';
 
 // Include relations for dish queries
@@ -30,6 +32,7 @@ const dishInclude = {
 
 /**
  * Builds a Prisma where clause from filter options
+ * Uses case-insensitive matching for text fields
  */
 function buildWhereClause(
   category: SlotCategory,
@@ -38,6 +41,7 @@ function buildWhereClause(
   const where: Record<string, unknown> = {
     slotCategory: category,
   };
+  const andConditions: Record<string, unknown>[] = [];
 
   // Kosher filter
   if (filters.kosherOnly) {
@@ -64,67 +68,63 @@ function buildWhereClause(
     where.cuisine = { in: filters.cuisines };
   }
 
-  // Max total time filter
-  if (filters.maxTotalTimeMinutes) {
-    // This is a bit tricky - we need to filter on combined time
-    // For now, we'll handle this in post-processing
-  }
-
-  // Include ingredients - dish must have ALL specified ingredients
+  // Include ingredients - dish must have ALL specified ingredients (case-insensitive)
   if (filters.includeIngredients && filters.includeIngredients.length > 0) {
-    where.ingredients = {
-      some: {
-        ingredient: {
-          name: { in: filters.includeIngredients.map((i) => i.toLowerCase()) },
-        },
-      },
-    };
-  }
-
-  // Exclude ingredients - dish must NOT have ANY of the specified ingredients
-  if (filters.excludeIngredients && filters.excludeIngredients.length > 0) {
-    where.NOT = {
+    // Use OR with case-insensitive search for each ingredient
+    const ingredientConditions = filters.includeIngredients.map((ing) => ({
       ingredients: {
         some: {
           ingredient: {
-            name: { in: filters.excludeIngredients.map((i) => i.toLowerCase()) },
+            name: {
+              equals: ing.toLowerCase(),
+              mode: 'insensitive' as const,
+            },
           },
         },
       },
-    };
+    }));
+    andConditions.push(...ingredientConditions);
   }
 
-  // Exclude allergens
-  if (filters.excludeAllergens && filters.excludeAllergens.length > 0) {
-    const notClause = where.NOT as Record<string, unknown> | undefined;
-    if (notClause) {
-      // Combine with existing NOT clause
-      where.AND = [
-        { NOT: notClause },
-        {
-          NOT: {
-            allergens: {
-              some: {
-                allergen: {
-                  name: { in: filters.excludeAllergens.map((a) => a.toLowerCase()) },
-                },
+  // Exclude ingredients - dish must NOT have ANY of the specified ingredients (case-insensitive)
+  if (filters.excludeIngredients && filters.excludeIngredients.length > 0) {
+    andConditions.push({
+      NOT: {
+        ingredients: {
+          some: {
+            ingredient: {
+              name: {
+                in: filters.excludeIngredients.map((i) => i.toLowerCase()),
+                mode: 'insensitive' as const,
               },
             },
           },
         },
-      ];
-      delete where.NOT;
-    } else {
-      where.NOT = {
+      },
+    });
+  }
+
+  // Exclude allergens (case-insensitive)
+  if (filters.excludeAllergens && filters.excludeAllergens.length > 0) {
+    andConditions.push({
+      NOT: {
         allergens: {
           some: {
             allergen: {
-              name: { in: filters.excludeAllergens.map((a) => a.toLowerCase()) },
+              name: {
+                in: filters.excludeAllergens.map((a) => a.toLowerCase()),
+                mode: 'insensitive' as const,
+              },
             },
           },
         },
-      };
-    }
+      },
+    });
+  }
+
+  // Combine all AND conditions
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
   }
 
   return where;
@@ -211,14 +211,14 @@ async function validateLockedDish(
 
   // Check kosher style filter
   if (filters.kosherStyles && filters.kosherStyles.length > 0) {
-    if (!filters.kosherStyles.includes(dish.kosherStyle as any)) {
+    if (!filters.kosherStyles.includes(dish.kosherStyle as KosherStyle)) {
       return { valid: false, reason: `Locked dish kosher style (${dish.kosherStyle}) not allowed` };
     }
   }
 
   // Check difficulty filter
   if (filters.difficulties && filters.difficulties.length > 0) {
-    if (!filters.difficulties.includes(dish.difficulty as any)) {
+    if (!filters.difficulties.includes(dish.difficulty as DifficultyLevel)) {
       return { valid: false, reason: `Locked dish difficulty (${dish.difficulty}) not allowed` };
     }
   }
@@ -230,23 +230,21 @@ async function validateLockedDish(
     }
   }
 
-  // Check exclude ingredients
+  // Check exclude ingredients (case-insensitive)
   if (filters.excludeIngredients && filters.excludeIngredients.length > 0) {
     const dishIngredients = dish.ingredients.map((i) => i.ingredient.name.toLowerCase());
-    const excluded = filters.excludeIngredients.find((ing) =>
-      dishIngredients.includes(ing.toLowerCase())
-    );
+    const excludeLower = filters.excludeIngredients.map((i) => i.toLowerCase());
+    const excluded = excludeLower.find((ing) => dishIngredients.includes(ing));
     if (excluded) {
       return { valid: false, reason: `Locked dish contains excluded ingredient: ${excluded}` };
     }
   }
 
-  // Check exclude allergens
+  // Check exclude allergens (case-insensitive)
   if (filters.excludeAllergens && filters.excludeAllergens.length > 0) {
     const dishAllergens = dish.allergens.map((a) => a.allergen.name.toLowerCase());
-    const excluded = filters.excludeAllergens.find((alg) =>
-      dishAllergens.includes(alg.toLowerCase())
-    );
+    const excludeLower = filters.excludeAllergens.map((a) => a.toLowerCase());
+    const excluded = excludeLower.find((alg) => dishAllergens.includes(alg));
     if (excluded) {
       return { valid: false, reason: `Locked dish contains excluded allergen: ${excluded}` };
     }
@@ -261,21 +259,6 @@ async function validateLockedDish(
   }
 
   return { valid: true, dish };
-}
-
-/**
- * Gets count of dishes per category
- */
-async function getDishCountsByCategory(): Promise<Record<string, number>> {
-  const counts: Record<string, number> = {};
-
-  for (const category of SLOT_CATEGORIES) {
-    counts[category] = await prisma.dish.count({
-      where: { slotCategory: category },
-    });
-  }
-
-  return counts;
 }
 
 /**

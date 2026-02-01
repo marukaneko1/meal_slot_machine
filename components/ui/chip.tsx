@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils/cn';
 import { X } from 'lucide-react';
+import type { SlotCategory } from '@/lib/types';
 
 interface ChipProps {
   label: string;
@@ -14,13 +15,13 @@ interface ChipProps {
   category?: string;
 }
 
-const categoryStyles: Record<string, string> = {
-  main_chicken: 'badge-main-chicken',
-  main_beef: 'badge-main-beef',
-  side_veg: 'badge-side-veg',
-  side_starch: 'badge-side-starch',
-  soup: 'badge-soup',
-  muffin: 'badge-muffin',
+const categoryStyleMap: Record<string, string> = {
+  main_chicken: 'chip-protein',
+  main_beef: 'chip-protein',
+  side_veg: 'chip-vegetable',
+  side_starch: 'chip-starch',
+  soup: 'chip-soup',
+  muffin: 'chip-dessert',
 };
 
 export function Chip({
@@ -37,8 +38,8 @@ export function Chip({
     return (
       <span
         className={cn(
-          'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium',
-          categoryStyles[category] || 'bg-slot-accent text-gray-300',
+          'chip',
+          categoryStyleMap[category] || 'chip',
           className
         )}
       >
@@ -47,21 +48,25 @@ export function Chip({
     );
   }
 
+  const isInteractive = onSelect || onRemove;
+
   return (
     <button
       type="button"
       onClick={onSelect || onRemove}
+      disabled={!isInteractive}
       className={cn(
-        'chip',
+        isInteractive ? 'chip-interactive' : 'chip',
         selected && 'chip-selected',
         removable && 'pr-1.5',
+        !isInteractive && 'cursor-default',
         className
       )}
     >
       {label}
       {removable && (
         <X
-          className="w-4 h-4 ml-1.5 hover:text-red-400"
+          className="w-3.5 h-3.5 ml-1.5 hover:text-error transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             onRemove?.();

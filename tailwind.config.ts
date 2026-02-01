@@ -1,5 +1,12 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * MEAL SLOT TAILWIND CONFIGURATION
+ * ================================
+ * Design system integration with Tailwind CSS.
+ * All custom values map to CSS variables in design-tokens.css
+ */
+
 const config: Config = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,51 +15,132 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      /* Colors - map to CSS variables */
       colors: {
-        'slot-gold': '#FFD700',
-        'slot-red': '#DC143C',
-        'slot-green': '#228B22',
-        'slot-blue': '#1E90FF',
-        'slot-purple': '#8B5CF6',
-        'slot-orange': '#FF8C00',
-        'slot-bg': '#1a1a2e',
-        'slot-card': '#16213e',
-        'slot-accent': '#0f3460',
+        bg: 'var(--color-bg)',
+        surface: {
+          DEFAULT: 'var(--color-surface)',
+          2: 'var(--color-surface-2)',
+          3: 'var(--color-surface-3)',
+        },
+        border: {
+          DEFAULT: 'var(--color-border)',
+          subtle: 'var(--color-border-subtle)',
+        },
+        text: {
+          DEFAULT: 'var(--color-text)',
+          secondary: 'var(--color-text-secondary)',
+          muted: 'var(--color-text-muted)',
+        },
+        accent: {
+          DEFAULT: 'var(--color-accent)',
+          hover: 'var(--color-accent-hover)',
+          subtle: 'var(--color-accent-subtle)',
+          text: 'var(--color-accent-text)',
+        },
+        success: {
+          DEFAULT: 'var(--color-success)',
+          subtle: 'var(--color-success-subtle)',
+        },
+        error: {
+          DEFAULT: 'var(--color-error)',
+          subtle: 'var(--color-error-subtle)',
+        },
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          subtle: 'var(--color-warning-subtle)',
+        },
+        info: {
+          DEFAULT: 'var(--color-info)',
+          subtle: 'var(--color-info-subtle)',
+        },
+        /* Category colors */
+        cat: {
+          protein: 'var(--color-cat-protein)',
+          vegetable: 'var(--color-cat-vegetable)',
+          starch: 'var(--color-cat-starch)',
+          soup: 'var(--color-cat-soup)',
+          dessert: 'var(--color-cat-dessert)',
+        },
       },
+      
+      /* Font families */
       fontFamily: {
-        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Georgia', 'serif'],
         body: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
       },
+      
+      /* Font sizes with line-height */
+      fontSize: {
+        xs: ['var(--text-xs)', { lineHeight: 'var(--leading-normal)' }],
+        sm: ['var(--text-sm)', { lineHeight: 'var(--leading-normal)' }],
+        base: ['var(--text-base)', { lineHeight: 'var(--leading-relaxed)' }],
+        lg: ['var(--text-lg)', { lineHeight: 'var(--leading-relaxed)' }],
+        xl: ['var(--text-xl)', { lineHeight: 'var(--leading-snug)' }],
+        '2xl': ['var(--text-2xl)', { lineHeight: 'var(--leading-snug)' }],
+        '3xl': ['var(--text-3xl)', { lineHeight: 'var(--leading-tight)' }],
+        '4xl': ['var(--text-4xl)', { lineHeight: 'var(--leading-tight)' }],
+        '5xl': ['var(--text-5xl)', { lineHeight: 'var(--leading-none)' }],
+      },
+      
+      /* Spacing */
+      spacing: {
+        '4.5': '1.125rem',
+        '18': '4.5rem',
+        '88': '22rem',
+      },
+      
+      /* Border radius */
+      borderRadius: {
+        sm: 'var(--radius-sm)',
+        DEFAULT: 'var(--radius-md)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+      },
+      
+      /* Box shadows */
+      boxShadow: {
+        sm: 'var(--shadow-sm)',
+        DEFAULT: 'var(--shadow-md)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        xl: 'var(--shadow-xl)',
+      },
+      
+      /* Transitions */
+      transitionDuration: {
+        fast: 'var(--duration-fast)',
+        normal: 'var(--duration-normal)',
+        slow: 'var(--duration-slow)',
+      },
+      
+      /* Container */
+      maxWidth: {
+        container: 'var(--container-xl)',
+      },
+      
+      /* Animations - restrained, subtle */
       animation: {
-        'spin-slot': 'spin-slot 0.1s linear infinite',
-        'slot-stop': 'slot-stop 0.3s ease-out forwards',
-        'bounce-in': 'bounce-in 0.5s ease-out forwards',
-        'shimmer': 'shimmer 2s linear infinite',
-        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+        'fade-in': 'fadeIn var(--duration-normal) var(--ease-out)',
+        'slide-up': 'slideUp var(--duration-normal) var(--ease-out)',
+        'slide-down': 'slideDown var(--duration-normal) var(--ease-out)',
+        'spin-slow': 'spin 3s linear infinite',
       },
+      
       keyframes: {
-        'spin-slot': {
-          '0%': { transform: 'translateY(0)' },
-          '100%': { transform: 'translateY(-100%)' },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
-        'slot-stop': {
-          '0%': { transform: 'translateY(-20px)', opacity: '0' },
-          '50%': { transform: 'translateY(5px)' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        'bounce-in': {
-          '0%': { transform: 'scale(0.3)', opacity: '0' },
-          '50%': { transform: 'scale(1.05)' },
-          '70%': { transform: 'scale(0.9)' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
-        },
-        'shimmer': {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
-        },
-        'pulse-glow': {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)' },
-          '50%': { boxShadow: '0 0 40px rgba(255, 215, 0, 0.6)' },
+        slideDown: {
+          '0%': { opacity: '0', transform: 'translateY(-8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
     },

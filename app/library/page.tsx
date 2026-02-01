@@ -4,10 +4,13 @@ import { useState, useEffect, useCallback, useTransition } from 'react';
 import { DishCard } from '@/components/dish-card';
 import { FilterBar } from '@/components/filter-bar';
 import { Button } from '@/components/ui/button';
+import { ErrorBoundary, ErrorFallback } from '@/components/error-boundary';
 import type { FilterOptions, DishWithRelations, SlotCategory } from '@/lib/types';
 import { SLOT_CATEGORIES, SLOT_CATEGORY_LABELS } from '@/lib/types';
 import { Grid3X3, List, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { RecipeModal } from '@/components/recipe-modal';
+import { useDebounce } from '@/lib/utils/hooks';
 
 interface PageData {
   dishes: DishWithRelations[];
@@ -41,7 +44,10 @@ async function fetchDishes(
   if (filters.maxTotalTimeMinutes) params.set('maxTime', String(filters.maxTotalTimeMinutes));
 
   const res = await fetch(`/api/dishes?${params.toString()}`);
-  if (!res.ok) throw new Error('Failed to fetch dishes');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to fetch dishes');
+  }
   return res.json();
 }
 
@@ -52,6 +58,12 @@ export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [isPending, startTransition] = useTransition();
+  const [selectedDish, setSelectedDish] = useState<DishWithRelations | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Debounce search query (300ms delay)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   const [data, setData] = useState<PageData>({
     dishes: [],
@@ -65,49 +77,55 @@ export default function LibraryPage() {
   const totalPages = Math.ceil(data.total / limit);
 
   const loadData = useCallback(() => {
+    setError(null);
     startTransition(async () => {
       try {
-        const result = await fetchDishes(filters, searchQuery, selectedCategory, page, limit);
+        const result = await fetchDishes(filters, debouncedSearchQuery, selectedCategory, page, limit);
         setData(result);
-      } catch (error) {
-        console.error('Failed to load dishes:', error);
+      } catch (err) {
+        console.error('Failed to load dishes:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load dishes');
       }
     });
-  }, [filters, searchQuery, selectedCategory, page]);
+  }, [filters, debouncedSearchQuery, selectedCategory, page]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Reset page when filters change
+  // Reset page when filters change (using debounced search)
   useEffect(() => {
     setPage(1);
-  }, [filters, searchQuery, selectedCategory]);
+  }, [filters, debouncedSearchQuery, selectedCategory]);
+
+  const handleRetry = () => {
+    setError(null);
+    loadData();
+  };
 
   return (
-    <div className="min-h-screen pt-6 pb-24 md:py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen py-6 md:py-10">
+      <div className="container-page">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-slot-purple" />
-            Dish Library
+        <header className="mb-8">
+          <h1 className="heading-1 flex items-center gap-3">
+            <BookOpen className="w-8 h-8 text-accent" aria-hidden="true" />
+            Library
           </h1>
-          <p className="text-gray-400 mt-2">
+          <p className="body-lg mt-2">
             Browse and filter your complete dish collection
           </p>
-        </div>
+        </header>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <nav className="flex flex-wrap gap-2 mb-6" aria-label="Category filters">
           <button
             onClick={() => setSelectedCategory(null)}
             className={cn(
-              'px-4 py-2 rounded-lg font-medium transition-all',
-              selectedCategory === null
-                ? 'bg-slot-purple text-white'
-                : 'bg-slot-card text-gray-400 hover:text-white hover:bg-slot-accent/50'
+              'chip-interactive',
+              selectedCategory === null && 'chip-selected'
             )}
+            aria-pressed={selectedCategory === null}
           >
             All
           </button>
@@ -116,18 +134,17 @@ export default function LibraryPage() {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                'px-4 py-2 rounded-lg font-medium transition-all',
-                selectedCategory === cat
-                  ? 'bg-slot-purple text-white'
-                  : 'bg-slot-card text-gray-400 hover:text-white hover:bg-slot-accent/50'
+                'chip-interactive',
+                selectedCategory === cat && 'chip-selected'
               )}
+              aria-pressed={selectedCategory === cat}
             >
               {SLOT_CATEGORY_LABELS[cat]}
             </button>
           ))}
-        </div>
+        </nav>
 
-        {/* Filter Bar */}
+        {/* Filters */}
         <FilterBar
           filters={filters}
           onChange={setFilters}
@@ -142,123 +159,165 @@ export default function LibraryPage() {
 
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
-          <p className="text-gray-400">
+          <p className="body-sm">
             {isPending ? (
               'Loading...'
+            ) : error ? (
+              <span className="text-error">Error loading dishes</span>
             ) : (
               <>
-                Showing <span className="text-white font-medium">{data.dishes.length}</span> of{' '}
-                <span className="text-white font-medium">{data.total}</span> dishes
+                Showing <span className="text-text font-medium">{data.dishes.length}</span> of{' '}
+                <span className="text-text font-medium">{data.total}</span> dishes
               </>
             )}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1" role="group" aria-label="View mode">
             <button
               onClick={() => setViewMode('grid')}
               className={cn(
-                'p-2 rounded-lg transition-colors',
+                'p-2 rounded-md transition-colors',
                 viewMode === 'grid'
-                  ? 'bg-slot-purple text-white'
-                  : 'bg-slot-card text-gray-400 hover:text-white'
+                  ? 'bg-accent-subtle text-accent'
+                  : 'text-text-muted hover:text-text hover:bg-surface-2'
               )}
+              aria-label="Grid view"
+              aria-pressed={viewMode === 'grid'}
             >
-              <Grid3X3 className="w-5 h-5" />
+              <Grid3X3 className="w-5 h-5" aria-hidden="true" />
             </button>
             <button
               onClick={() => setViewMode('table')}
               className={cn(
-                'p-2 rounded-lg transition-colors',
+                'p-2 rounded-md transition-colors',
                 viewMode === 'table'
-                  ? 'bg-slot-purple text-white'
-                  : 'bg-slot-card text-gray-400 hover:text-white'
+                  ? 'bg-accent-subtle text-accent'
+                  : 'text-text-muted hover:text-text hover:bg-surface-2'
               )}
+              aria-label="Table view"
+              aria-pressed={viewMode === 'table'}
             >
-              <List className="w-5 h-5" />
+              <List className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        {data.dishes.length === 0 && !isPending ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slot-accent/50 mb-4">
-              <BookOpen className="w-8 h-8 text-gray-500" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">No dishes found</h3>
-            <p className="text-gray-400">
-              {data.total === 0
-                ? 'Upload a CSV file to add dishes to your library'
-                : 'Try adjusting your filters to see more results'}
-            </p>
-          </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.dishes.map((dish) => (
-              <DishCard key={dish.id} dish={dish} />
-            ))}
-          </div>
-        ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Kosher</th>
-                  <th>Difficulty</th>
-                  <th>Time</th>
-                  <th>Protein</th>
-                  <th>Cuisine</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.dishes.map((dish) => (
-                  <tr key={dish.id}>
-                    <td className="font-medium text-white">{dish.name}</td>
-                    <td>
-                      <span
-                        className={cn(
-                          'inline-flex px-2 py-0.5 rounded text-xs font-medium',
-                          `badge-${dish.slotCategory}`
-                        )}
-                      >
-                        {SLOT_CATEGORY_LABELS[dish.slotCategory as SlotCategory]}
-                      </span>
-                    </td>
-                    <td>
-                      {dish.kosher ? (
-                        <span className="text-green-400">✓</span>
-                      ) : (
-                        <span className="text-gray-600">-</span>
-                      )}
-                    </td>
-                    <td className="capitalize">{dish.difficulty}</td>
-                    <td>
-                      {(dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0) > 0
-                        ? `${(dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0)} min`
-                        : '-'}
-                    </td>
-                    <td className="capitalize">{dish.mainProtein || '-'}</td>
-                    <td>{dish.cuisine || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Error State */}
+        {error && (
+          <div className="mb-6">
+            <ErrorFallback message={error} onRetry={handleRetry} />
           </div>
         )}
 
+        {/* Content */}
+        <ErrorBoundary>
+          {!error && data.dishes.length === 0 && !isPending ? (
+            <div className="empty-state">
+              <BookOpen className="empty-state-icon" aria-hidden="true" />
+              <h3 className="empty-state-title">No dishes found</h3>
+              <p className="empty-state-description">
+                {data.total === 0
+                  ? 'Upload a CSV file to add dishes to your library'
+                  : 'Try adjusting your filters to see more results'}
+              </p>
+            </div>
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {data.dishes.map((dish) => (
+                <button
+                  key={dish.id}
+                  onClick={() => {
+                    setSelectedDish(dish);
+                    setIsModalOpen(true);
+                  }}
+                  className="text-left"
+                  aria-label={`View ${dish.name}`}
+                >
+                  <DishCard dish={dish} />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Kosher</th>
+                    <th scope="col">Difficulty</th>
+                    <th scope="col">Time</th>
+                    <th scope="col">Protein</th>
+                    <th scope="col">Cuisine</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.dishes.map((dish) => (
+                    <tr
+                      key={dish.id}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        setSelectedDish(dish);
+                        setIsModalOpen(true);
+                      }}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedDish(dish);
+                          setIsModalOpen(true);
+                        }
+                      }}
+                      role="button"
+                      aria-label={`View ${dish.name}`}
+                    >
+                      <td className="font-medium text-text">{dish.name}</td>
+                      <td>
+                        <span className={cn(
+                          'chip text-xs',
+                          dish.slotCategory.includes('chicken') || dish.slotCategory.includes('beef') ? 'chip-protein' :
+                          dish.slotCategory.includes('veg') ? 'chip-vegetable' :
+                          dish.slotCategory.includes('starch') ? 'chip-starch' :
+                          dish.slotCategory === 'soup' ? 'chip-soup' : 'chip-dessert'
+                        )}>
+                          {SLOT_CATEGORY_LABELS[dish.slotCategory as SlotCategory]}
+                        </span>
+                      </td>
+                      <td>
+                        {dish.kosher ? (
+                          <span className="text-success">Yes</span>
+                        ) : (
+                          <span className="text-text-muted">—</span>
+                        )}
+                      </td>
+                      <td className="capitalize">{dish.difficulty}</td>
+                      <td>
+                        {(dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0) > 0
+                          ? `${(dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0)} min`
+                          : '—'}
+                      </td>
+                      <td className="capitalize">{dish.mainProtein || '—'}</td>
+                      <td>{dish.cuisine || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </ErrorBoundary>
+
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-8">
+        {totalPages > 1 && !error && (
+          <nav className="flex items-center justify-center gap-2 mt-8" aria-label="Pagination">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              aria-label="Previous page"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             </Button>
-            <span className="px-4 py-2 text-gray-400">
+            <span className="body-sm px-4" aria-current="page">
               Page {page} of {totalPages}
             </span>
             <Button
@@ -266,12 +325,23 @@ export default function LibraryPage() {
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              aria-label="Next page"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </Button>
-          </div>
+          </nav>
         )}
       </div>
+
+      {/* Recipe Modal */}
+      <RecipeModal
+        dish={selectedDish}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedDish(null);
+        }}
+      />
     </div>
   );
 }

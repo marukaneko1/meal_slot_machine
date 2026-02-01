@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { SplashScreen } from './splash-screen';
+import { SparkleProvider } from './sparkle-provider';
 
 export function AppWrapper({ children }: { children: React.ReactNode }) {
   const [showSplash, setShowSplash] = useState(true);
@@ -33,11 +34,11 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <SparkleProvider>
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <div className={showSplash ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'}>
         {children}
       </div>
-    </>
+    </SparkleProvider>
   );
 }

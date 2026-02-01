@@ -8,6 +8,7 @@ interface ToggleProps {
   label?: string;
   disabled?: boolean;
   className?: string;
+  id?: string;
 }
 
 export function Toggle({
@@ -16,9 +17,13 @@ export function Toggle({
   label,
   disabled,
   className,
+  id,
 }: ToggleProps) {
+  const toggleId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  
   return (
     <label
+      htmlFor={toggleId}
       className={cn(
         'inline-flex items-center gap-3 cursor-pointer',
         disabled && 'opacity-50 cursor-not-allowed',
@@ -26,9 +31,11 @@ export function Toggle({
       )}
     >
       <button
+        id={toggleId}
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         disabled={disabled}
         data-state={checked ? 'checked' : 'unchecked'}
         onClick={() => !disabled && onChange(!checked)}
@@ -36,7 +43,11 @@ export function Toggle({
       >
         <span className="toggle-thumb" />
       </button>
-      {label && <span className="text-sm font-medium text-slot-gold">{label}</span>}
+      {label && (
+        <span className="text-sm font-medium text-text">
+          {label}
+        </span>
+      )}
     </label>
   );
 }

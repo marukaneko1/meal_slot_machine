@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ChipGroup } from '@/components/ui/chip';
 import type { SlotCategory } from '@/lib/types';
 import { SLOT_CATEGORIES, SLOT_CATEGORY_LABELS } from '@/lib/types';
 import {
@@ -147,16 +146,16 @@ export default function AdminProfilesPage() {
   };
 
   return (
-    <div className="min-h-screen pt-6 pb-24 md:py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen py-6 md:py-10">
+      <div className="container-page max-w-4xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <header className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Users className="w-8 h-8 text-slot-purple" />
-              Customer Profiles
+            <h1 className="heading-1 flex items-center gap-3">
+              <Users className="w-8 h-8 text-accent" />
+              Profiles
             </h1>
-            <p className="text-gray-400 mt-2">
+            <p className="body-lg mt-2">
               Manage meal plan templates and category presets
             </p>
           </div>
@@ -174,7 +173,7 @@ export default function AdminProfilesPage() {
             <Plus className="w-4 h-4" />
             New Profile
           </Button>
-        </div>
+        </header>
 
         {/* Create/Edit Form */}
         {(isCreating || editingId) && (
@@ -204,7 +203,7 @@ export default function AdminProfilesPage() {
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
+                <label className="input-label mb-3 block">
                   Categories to Include
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -213,23 +212,20 @@ export default function AdminProfilesPage() {
                       key={cat}
                       onClick={() => toggleCategory(cat)}
                       className={cn(
-                        'px-3 py-2 rounded-lg text-sm font-medium transition-all',
-                        formData.categories.includes(cat)
-                          ? `badge-${cat}`
-                          : 'bg-slot-accent text-gray-500 hover:text-gray-300'
+                        'chip-interactive',
+                        formData.categories.includes(cat) && 'chip-selected'
                       )}
                     >
                       {SLOT_CATEGORY_LABELS[cat]}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Selected: {formData.categories.length} of {SLOT_CATEGORIES.length}{' '}
-                  categories
+                <p className="caption mt-2">
+                  Selected: {formData.categories.length} of {SLOT_CATEGORIES.length} categories
                 </p>
               </div>
 
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -258,7 +254,7 @@ export default function AdminProfilesPage() {
         )}
 
         {/* Profiles List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {profiles.map((profile) => {
             const rules: ProfileRules = JSON.parse(profile.rulesJson);
             return (
@@ -267,26 +263,27 @@ export default function AdminProfilesPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold">{profile.name}</h3>
+                        <h3 className="heading-4">{profile.name}</h3>
                         {profile.isDefault && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slot-gold/20 text-slot-gold">
+                          <span className="chip bg-accent-subtle text-accent text-xs gap-1">
                             <Star className="w-3 h-3" />
                             Default
                           </span>
                         )}
                       </div>
                       {rules.description && (
-                        <p className="text-sm text-gray-400 mb-3">
-                          {rules.description}
-                        </p>
+                        <p className="body-sm mb-3">{rules.description}</p>
                       )}
                       <div className="flex flex-wrap gap-1">
                         {rules.categories?.map((cat) => (
                           <span
                             key={cat}
                             className={cn(
-                              'px-2 py-0.5 rounded text-xs font-medium',
-                              `badge-${cat}`
+                              'chip text-xs',
+                              cat.includes('chicken') || cat.includes('beef') ? 'chip-protein' :
+                              cat.includes('veg') ? 'chip-vegetable' :
+                              cat.includes('starch') ? 'chip-starch' :
+                              cat === 'soup' ? 'chip-soup' : 'chip-dessert'
                             )}
                           >
                             {SLOT_CATEGORY_LABELS[cat]}
@@ -294,7 +291,7 @@ export default function AdminProfilesPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {!profile.isDefault && (
                         <Button
                           variant="ghost"
@@ -317,7 +314,7 @@ export default function AdminProfilesPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(profile.id)}
-                          className="hover:text-red-400"
+                          className="hover:text-error"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -330,19 +327,17 @@ export default function AdminProfilesPage() {
           })}
 
           {profiles.length === 0 && (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Users className="w-12 h-12 mx-auto mb-4 text-gray-500" />
-                <h3 className="text-lg font-semibold mb-2">No profiles yet</h3>
-                <p className="text-gray-400 mb-4">
-                  Create a profile to define meal plan categories
-                </p>
-                <Button variant="primary" onClick={() => setIsCreating(true)}>
-                  <Plus className="w-4 h-4" />
-                  Create First Profile
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="empty-state">
+              <Users className="empty-state-icon" />
+              <h3 className="empty-state-title">No profiles yet</h3>
+              <p className="empty-state-description">
+                Create a profile to define meal plan categories
+              </p>
+              <Button variant="primary" onClick={() => setIsCreating(true)} className="mt-4">
+                <Plus className="w-4 h-4" />
+                Create First Profile
+              </Button>
+            </div>
           )}
         </div>
       </div>

@@ -6,20 +6,25 @@ import { type ReactNode } from 'react';
 interface CardProps {
   children: ReactNode;
   className?: string;
-  hover?: boolean;
+  interactive?: boolean;
+  as?: 'div' | 'article' | 'section';
 }
 
-export function Card({ children, className, hover = false }: CardProps) {
+export function Card({ 
+  children, 
+  className, 
+  interactive = false,
+  as: Component = 'div' 
+}: CardProps) {
   return (
-    <div
+    <Component
       className={cn(
-        'bg-slot-card rounded-2xl border border-slot-accent/50 p-6',
-        hover && 'card-hover',
+        interactive ? 'card-interactive' : 'card',
         className
       )}
     >
       {children}
-    </div>
+    </Component>
   );
 }
 
@@ -39,13 +44,18 @@ export function CardHeader({ children, className }: CardHeaderProps) {
 interface CardTitleProps {
   children: ReactNode;
   className?: string;
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 }
 
-export function CardTitle({ children, className }: CardTitleProps) {
+export function CardTitle({ 
+  children, 
+  className,
+  as: Component = 'h3' 
+}: CardTitleProps) {
   return (
-    <h3 className={cn('text-xl font-bold text-white', className)}>
+    <Component className={cn('heading-4', className)}>
       {children}
-    </h3>
+    </Component>
   );
 }
 
@@ -56,7 +66,20 @@ interface CardContentProps {
 
 export function CardContent({ children, className }: CardContentProps) {
   return (
-    <div className={cn('text-gray-400', className)}>
+    <div className={cn('body-sm', className)}>
+      {children}
+    </div>
+  );
+}
+
+interface CardFooterProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export function CardFooter({ children, className }: CardFooterProps) {
+  return (
+    <div className={cn('mt-4 pt-4 border-t border-border-subtle', className)}>
       {children}
     </div>
   );
