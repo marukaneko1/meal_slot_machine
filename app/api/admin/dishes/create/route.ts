@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { importDish } from '@/lib/csv/import';
+import { createDish } from '@/lib/db/dishes-create';
 import type { NormalizedDishData } from '@/lib/types';
 import { SLOT_CATEGORIES, KOSHER_STYLES, DIFFICULTY_LEVELS } from '@/lib/types';
 
@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
         : [],
     };
 
-    // Import the dish
-    const result = await importDish(normalizedData, false);
+    // Create the dish
+    const result = await createDish(normalizedData, false);
 
     if (result.action === 'skipped') {
       return NextResponse.json(
