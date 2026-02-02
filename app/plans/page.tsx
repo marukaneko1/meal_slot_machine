@@ -10,6 +10,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { ErrorBoundary } from '@/components/error-boundary';
 import type { FilterOptions, SlotCategory, DishWithRelations } from '@/lib/types';
 import { SLOT_CATEGORY_LABELS, SLOT_CATEGORIES } from '@/lib/types';
+import { cn } from '@/lib/utils/cn';
 import {
   CalendarDays,
   Sparkles,
@@ -255,7 +256,7 @@ export default function PlansPage() {
     <div className="min-h-screen py-6 md:py-10">
       <div className="container-page">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="heading-1 flex items-center gap-3">
               <CalendarDays className="w-8 h-8 text-accent" aria-hidden="true" />
@@ -265,30 +266,40 @@ export default function PlansPage() {
               Generate and manage your meal plans
             </p>
           </div>
-          <div className="flex items-center gap-2" role="group" aria-label="View mode">
-            <Button
-              variant={mode === 'generate' ? 'primary' : 'ghost'}
+          <div className="flex items-center gap-2 flex-shrink-0" role="group" aria-label="View mode">
+            <button
               onClick={() => setMode('generate')}
+              className={cn(
+                'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                mode === 'generate'
+                  ? 'bg-accent text-bg'
+                  : 'bg-transparent text-text-secondary hover:bg-surface-2 hover:text-text'
+              )}
               aria-pressed={mode === 'generate'}
             >
               <Sparkles className="w-4 h-4" aria-hidden="true" />
               Generate
-            </Button>
-            <Button
-              variant={mode === 'view' ? 'primary' : 'ghost'}
+            </button>
+            <button
               onClick={() => setMode('view')}
+              className={cn(
+                'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                mode === 'view'
+                  ? 'bg-accent text-bg'
+                  : 'bg-transparent text-text-secondary hover:bg-surface-2 hover:text-text'
+              )}
               aria-pressed={mode === 'view'}
             >
               <CalendarDays className="w-4 h-4" aria-hidden="true" />
               Saved
-            </Button>
+            </button>
           </div>
         </header>
 
         {/* Toast */}
         {saveSuccess && (
           <div 
-            className="fixed top-20 right-4 alert-success z-50 animate-slide-down shadow-lg"
+            className="fixed top-4 md:top-20 right-4 alert-success z-50 animate-slide-down shadow-lg"
             role="status"
             aria-live="polite"
           >

@@ -377,17 +377,7 @@ export function SlotMachine({
     }
   }, { disabled: isSpinning || isModalOpen });
 
-  // Keyboard shortcuts: 1-6 to toggle lock on reels
-  categories.forEach((category, index) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useKeyPress(String(index + 1), () => {
-      if (!isSpinning && !isModalOpen && currentDishes[category]) {
-        handleToggleLock(category);
-      }
-    }, { disabled: isSpinning || isModalOpen });
-  });
-
-  const handleToggleLock = (category: SlotCategory) => {
+  const handleToggleLock = useCallback((category: SlotCategory) => {
     const dish = currentDishes[category];
     if (!dish) return;
 
@@ -400,7 +390,26 @@ export function SlotMachine({
       }
       return { ...prev, [category]: dish.id };
     });
-  };
+  }, [currentDishes]);
+
+  // Keyboard shortcuts: 1-6 to toggle lock on reels
+  // Using a single keydown listener instead of multiple hooks to comply with Rules of Hooks
+  useEffect(() => {
+    if (isSpinning || isModalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const keyNum = parseInt(e.key, 10);
+      if (keyNum >= 1 && keyNum <= categories.length) {
+        const category = categories[keyNum - 1];
+        if (currentDishes[category]) {
+          handleToggleLock(category);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSpinning, isModalOpen, categories, currentDishes, handleToggleLock]);
 
   const handleSaveClick = async () => {
     if (Object.keys(currentDishes).length === categories.length) {

@@ -57,7 +57,7 @@ export default function RootLayout({
         <AppWrapper>
           <PWAProvider>
             <Navigation />
-            <main className="min-h-screen pt-0 md:pt-14 pb-20 md:pb-0">
+            <main className="min-h-screen pt-12 md:pt-14 pb-24 md:pb-0">
               {children}
             </main>
             <BottomNav />

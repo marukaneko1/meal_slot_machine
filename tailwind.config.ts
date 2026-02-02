@@ -124,7 +124,8 @@ const config: Config = {
       /* Animations - restrained, subtle */
       animation: {
         'fade-in': 'fadeIn var(--duration-normal) var(--ease-out)',
-        'slide-up': 'slideUp var(--duration-normal) var(--ease-out)',
+        'slide-up': 'slideUp 300ms cubic-bezier(0.32, 0.72, 0, 1)',
+        'slide-up-small': 'slideUpSmall var(--duration-normal) var(--ease-out)',
         'slide-down': 'slideDown var(--duration-normal) var(--ease-out)',
         'spin-slow': 'spin 3s linear infinite',
       },
@@ -135,6 +136,10 @@ const config: Config = {
           '100%': { opacity: '1' },
         },
         slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(100%)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideUpSmall: {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },

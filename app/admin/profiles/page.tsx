@@ -149,10 +149,10 @@ export default function AdminProfilesPage() {
     <div className="min-h-screen py-6 md:py-10">
       <div className="container-page max-w-4xl">
         {/* Header */}
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="heading-1 flex items-center gap-3">
-              <Users className="w-8 h-8 text-accent" />
+              <Users className="w-8 h-8 text-accent" aria-hidden="true" />
               Profiles
             </h1>
             <p className="body-lg mt-2">
@@ -169,8 +169,9 @@ export default function AdminProfilesPage() {
                 description: '',
               });
             }}
+            className="self-start"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden="true" />
             New Profile
           </Button>
         </header>
@@ -291,33 +292,32 @@ export default function AdminProfilesPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       {!profile.isDefault && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={() => handleSetDefault(profile.id)}
+                          className="p-2.5 md:p-2 rounded-lg md:rounded-md text-text-muted hover:text-accent hover:bg-surface-2 transition-colors"
                           title="Set as default"
+                          aria-label={`Set ${profile.name} as default`}
                         >
-                          <Star className="w-4 h-4" />
-                        </Button>
+                          <Star className="w-4 h-4" aria-hidden="true" />
+                        </button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         onClick={() => startEditing(profile)}
+                        className="p-2.5 md:p-2 rounded-lg md:rounded-md text-text-muted hover:text-text hover:bg-surface-2 transition-colors"
+                        aria-label={`Edit ${profile.name}`}
                       >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
+                        <Edit2 className="w-4 h-4" aria-hidden="true" />
+                      </button>
                       {!profile.isDefault && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={() => handleDelete(profile.id)}
-                          className="hover:text-error"
+                          className="p-2.5 md:p-2 rounded-lg md:rounded-md text-text-muted hover:text-error hover:bg-error-subtle transition-colors"
+                          aria-label={`Delete ${profile.name}`}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
                       )}
                     </div>
                   </div>

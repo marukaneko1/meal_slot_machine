@@ -118,11 +118,14 @@ export default function LibraryPage() {
         </header>
 
         {/* Category Tabs */}
-        <nav className="flex flex-wrap gap-2 mb-6" aria-label="Category filters">
+        <nav 
+          className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:overflow-visible scrollbar-hide" 
+          aria-label="Category filters"
+        >
           <button
             onClick={() => setSelectedCategory(null)}
             className={cn(
-              'chip-interactive',
+              'chip-interactive flex-shrink-0',
               selectedCategory === null && 'chip-selected'
             )}
             aria-pressed={selectedCategory === null}
@@ -134,7 +137,7 @@ export default function LibraryPage() {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                'chip-interactive',
+                'chip-interactive flex-shrink-0',
                 selectedCategory === cat && 'chip-selected'
               )}
               aria-pressed={selectedCategory === cat}
@@ -175,7 +178,7 @@ export default function LibraryPage() {
             <button
               onClick={() => setViewMode('grid')}
               className={cn(
-                'p-2 rounded-md transition-colors',
+                'p-3 md:p-2 rounded-lg md:rounded-md transition-colors',
                 viewMode === 'grid'
                   ? 'bg-accent-subtle text-accent'
                   : 'text-text-muted hover:text-text hover:bg-surface-2'
@@ -188,7 +191,7 @@ export default function LibraryPage() {
             <button
               onClick={() => setViewMode('table')}
               className={cn(
-                'p-2 rounded-md transition-colors',
+                'p-3 md:p-2 rounded-lg md:rounded-md transition-colors',
                 viewMode === 'table'
                   ? 'bg-accent-subtle text-accent'
                   : 'text-text-muted hover:text-text hover:bg-surface-2'

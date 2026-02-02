@@ -65,6 +65,27 @@ export default function ShoppingListPage() {
     }
   }, [undoState.show]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showAddModal) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [showAddModal]);
+
   const handleAddItem = () => {
     const itemName = useDropdown ? newItemName : newItemName.trim();
     if (!itemName) return;
@@ -141,11 +162,11 @@ export default function ShoppingListPage() {
       <div className="container-page max-w-3xl">
         {/* Undo Toast */}
         {undoState.show && undoState.deletedItem && (
-          <div className="fixed top-4 md:top-20 left-1/2 -translate-x-1/2 alert-warning z-50 animate-slide-down shadow-lg">
-            <AlertCircle className="w-5 h-5" />
-            <span>Removed <strong>{undoState.deletedItem.name}</strong></span>
+          <div className="fixed top-4 md:top-20 left-1/2 -translate-x-1/2 alert-warning z-50 animate-slide-down shadow-lg max-w-[90vw]">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+            <span className="truncate">Removed <strong>{undoState.deletedItem.name}</strong></span>
             <Button variant="secondary" size="sm" onClick={handleUndo}>
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
               Undo
             </Button>
           </div>
@@ -270,78 +291,107 @@ export default function ShoppingListPage() {
         {/* Add Modal */}
         {showAddModal && (
           <>
-            <div className="modal-backdrop animate-fade-in" onClick={() => setShowAddModal(false)} />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm animate-fade-in" 
+              onClick={() => { setShowAddModal(false); setNewItemName(''); setNewItemQuantity(''); }}
+              aria-hidden="true"
+            />
+            
+            {/* Modal Container */}
+            <div 
+              className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+              onClick={() => { setShowAddModal(false); setNewItemName(''); setNewItemQuantity(''); }}
+            >
               <div
-                className="modal-content w-full max-w-md p-6 pointer-events-auto animate-slide-up"
+                className={cn(
+                  "relative w-full max-w-md bg-surface border border-border-subtle shadow-xl",
+                  "rounded-t-2xl md:rounded-xl",
+                  "max-h-[85vh] md:max-h-[85vh]",
+                  "flex flex-col",
+                  "animate-slide-up"
+                )}
                 onClick={(e) => e.stopPropagation()}
               >
+                {/* Drag handle for mobile */}
+                <div className="md:hidden flex justify-center pt-3 pb-1">
+                  <div className="w-10 h-1 rounded-full bg-surface-3" />
+                </div>
+
+                {/* Close Button */}
                 <button
                   onClick={() => { setShowAddModal(false); setNewItemName(''); setNewItemQuantity(''); }}
-                  className="absolute top-4 right-4 p-2 rounded-md bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text transition-colors"
+                  className="absolute top-3 right-3 md:top-4 md:right-4 z-10 p-2.5 md:p-2 rounded-full md:rounded-md bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text transition-colors"
+                  aria-label="Close modal"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
 
-                <h2 className="heading-3 mb-6 pr-10">Add Item</h2>
+                {/* Content */}
+                <div className="p-6 overflow-y-auto flex-1">
+                  <h2 className="heading-3 mb-6 pr-10">Add Item</h2>
 
-                <div className="space-y-4">
-                  <Toggle
-                    checked={useDropdown}
-                    onChange={setUseDropdown}
-                    label={useDropdown ? 'From database' : 'Manual entry'}
-                  />
+                  <div className="space-y-4">
+                    <Toggle
+                      checked={useDropdown}
+                      onChange={setUseDropdown}
+                      label={useDropdown ? 'From database' : 'Manual entry'}
+                    />
 
-                  {useDropdown ? (
-                    <>
-                      <Select
-                        label="Select Ingredient"
-                        value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
-                        options={[
-                          { value: '', label: 'Select...' },
-                          ...availableIngredients.map((ing) => ({
-                            value: ing,
-                            label: ing.charAt(0).toUpperCase() + ing.slice(1),
-                          })),
-                        ]}
-                      />
-                      <Input
-                        label="Quantity (optional)"
-                        placeholder="e.g., 2 lbs, 1 cup"
-                        value={newItemQuantity}
-                        onChange={(e) => setNewItemQuantity(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && newItemName && handleAddItem()}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <Input
-                        label="Item Name"
-                        placeholder="Enter item name..."
-                        value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                      />
-                      <Input
-                        label="Quantity (optional)"
-                        placeholder="e.g., 2 lbs, 1 cup"
-                        value={newItemQuantity}
-                        onChange={(e) => setNewItemQuantity(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && newItemName.trim() && handleAddItem()}
-                      />
-                    </>
-                  )}
+                    {useDropdown ? (
+                      <>
+                        <Select
+                          label="Select Ingredient"
+                          value={newItemName}
+                          onChange={(e) => setNewItemName(e.target.value)}
+                          options={[
+                            { value: '', label: 'Select...' },
+                            ...availableIngredients.map((ing) => ({
+                              value: ing,
+                              label: ing.charAt(0).toUpperCase() + ing.slice(1),
+                            })),
+                          ]}
+                        />
+                        <Input
+                          label="Quantity (optional)"
+                          placeholder="e.g., 2 lbs, 1 cup"
+                          value={newItemQuantity}
+                          onChange={(e) => setNewItemQuantity(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && newItemName && handleAddItem()}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <Input
+                          label="Item Name"
+                          placeholder="Enter item name..."
+                          value={newItemName}
+                          onChange={(e) => setNewItemName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+                        />
+                        <Input
+                          label="Quantity (optional)"
+                          placeholder="e.g., 2 lbs, 1 cup"
+                          value={newItemQuantity}
+                          onChange={(e) => setNewItemQuantity(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && newItemName.trim() && handleAddItem()}
+                        />
+                      </>
+                    )}
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-border-subtle">
-                    <Button variant="ghost" onClick={() => { setShowAddModal(false); setNewItemName(''); setNewItemQuantity(''); }}>
-                      Cancel
-                    </Button>
-                    <Button variant="primary" onClick={handleAddItem} disabled={!newItemName}>
-                      <Plus className="w-4 h-4" />
-                      Add
-                    </Button>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-border-subtle">
+                      <Button variant="ghost" onClick={() => { setShowAddModal(false); setNewItemName(''); setNewItemQuantity(''); }}>
+                        Cancel
+                      </Button>
+                      <Button variant="primary" onClick={handleAddItem} disabled={!newItemName}>
+                        <Plus className="w-4 h-4" aria-hidden="true" />
+                        Add
+                      </Button>
+                    </div>
                   </div>
+                  
+                  {/* Bottom safe area padding for mobile */}
+                  <div className="h-6 md:h-0 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} />
                 </div>
               </div>
             </div>
@@ -388,17 +438,19 @@ function ShoppingItem({
           : 'bg-surface-2 border-border-subtle hover:border-border'
       )}
     >
-      {/* Checkbox */}
+      {/* Checkbox - larger touch target on mobile */}
       <button
         onClick={onToggle}
         className={cn(
-          'mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+          'mt-0.5 w-6 h-6 md:w-5 md:h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors',
           item.checked
             ? 'bg-accent border-accent'
             : 'border-border hover:border-accent'
         )}
+        aria-label={item.checked ? `Uncheck ${item.name}` : `Check ${item.name}`}
+        aria-pressed={item.checked}
       >
-        {item.checked && <Check className="w-3 h-3 text-bg" />}
+        {item.checked && <Check className="w-3.5 h-3.5 md:w-3 md:h-3 text-bg" aria-hidden="true" />}
       </button>
 
       {/* Content */}
@@ -438,22 +490,24 @@ function ShoppingItem({
                   <p className="body-sm mt-0.5">{item.notes}</p>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={onStartEdit}
-                  className="p-1.5 rounded-md hover:bg-surface-3 text-text-muted hover:text-text transition-colors"
-                  title="Edit"
-                >
-                  <Plus className="w-4 h-4 rotate-45" />
-                </button>
-                <button
-                  onClick={onRemove}
-                  className="p-1.5 rounded-md hover:bg-error-subtle text-text-muted hover:text-error transition-colors"
-                  title="Remove"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={onStartEdit}
+                                  className="p-2.5 md:p-1.5 rounded-lg md:rounded-md hover:bg-surface-3 text-text-muted hover:text-text transition-colors"
+                                  title="Edit"
+                                  aria-label={`Edit ${item.name}`}
+                                >
+                                  <Plus className="w-4 h-4 rotate-45" aria-hidden="true" />
+                                </button>
+                                <button
+                                  onClick={onRemove}
+                                  className="p-2.5 md:p-1.5 rounded-lg md:rounded-md hover:bg-error-subtle text-text-muted hover:text-error transition-colors"
+                                  title="Remove"
+                                  aria-label={`Remove ${item.name}`}
+                                >
+                                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                                </button>
+                              </div>
             </div>
           </>
         )}

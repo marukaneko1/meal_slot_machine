@@ -80,6 +80,27 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen || !dish) return null;
 
   const totalTime = (dish.prepTimeMinutes || 0) + (dish.cookTimeMinutes || 0);
@@ -140,33 +161,46 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
     <>
       {/* Backdrop */}
       <div
-        className="modal-backdrop animate-fade-in"
+        className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal */}
+      {/* Modal Container - handles centering and padding */}
       <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+        className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+        onClick={onClose}
         role="dialog"
         aria-modal="true"
         aria-labelledby="recipe-modal-title"
       >
+        {/* Modal Content */}
         <div
-          className="modal-content w-full max-w-2xl max-h-[90vh] pointer-events-auto animate-slide-up"
+          className={cn(
+            "relative w-full max-w-2xl bg-surface border border-border-subtle shadow-xl",
+            "rounded-t-2xl md:rounded-xl",
+            "max-h-[85vh] md:max-h-[85vh]",
+            "flex flex-col",
+            "animate-slide-up"
+          )}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Drag handle for mobile */}
+          <div className="md:hidden flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-surface-3" />
+          </div>
+
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 rounded-md bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text transition-colors"
+            className="absolute top-3 right-3 md:top-4 md:right-4 z-10 p-2.5 md:p-2 rounded-full md:rounded-md bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text transition-colors"
             aria-label="Close recipe modal"
           >
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
 
-          {/* Content */}
-          <div className="overflow-y-auto max-h-[90vh]">
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 overscroll-contain">
             {/* Header */}
             <div className="p-6 border-b border-border-subtle">
               <div className="pr-10">
@@ -347,6 +381,12 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
                   <p className="body-sm italic">No source URL available</p>
                 )}
               </div>
+              
+              {/* Bottom padding for safe area on mobile */}
+              <div 
+                className="h-6 md:h-0 flex-shrink-0" 
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} 
+              />
             </div>
           </div>
         </div>
