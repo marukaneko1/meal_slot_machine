@@ -41,16 +41,20 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
 
   // Cleanup all timeouts when modal closes or unmounts
   useEffect(() => {
+    // Copy ref values to local variables for cleanup
+    const cartTimeout = cartTimeoutRef.current;
+    const ingredientTimeouts = ingredientTimeoutsRef.current;
+    
     if (!isOpen) {
       // Clear cart timeout
-      if (cartTimeoutRef.current) {
-        clearTimeout(cartTimeoutRef.current);
+      if (cartTimeout) {
+        clearTimeout(cartTimeout);
         cartTimeoutRef.current = null;
       }
       
       // Clear all ingredient timeouts
-      ingredientTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
-      ingredientTimeoutsRef.current.clear();
+      ingredientTimeouts.forEach((timeout) => clearTimeout(timeout));
+      ingredientTimeouts.clear();
       
       // Reset state
       setAddedToCart(false);
@@ -59,10 +63,10 @@ export function RecipeModal({ dish, isOpen, onClose }: RecipeModalProps) {
     
     // Cleanup on unmount
     return () => {
-      if (cartTimeoutRef.current) {
-        clearTimeout(cartTimeoutRef.current);
+      if (cartTimeout) {
+        clearTimeout(cartTimeout);
       }
-      ingredientTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      ingredientTimeouts.forEach((timeout) => clearTimeout(timeout));
     };
   }, [isOpen]);
 
